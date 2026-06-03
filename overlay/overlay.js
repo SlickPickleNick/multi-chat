@@ -748,16 +748,16 @@ function renderMessage(message) {
 
   if (message.isAnnouncement) {
     const announcementColor = message.announcementColor || '#9146ff';
-    const strong = toRgba(announcementColor, 0.72);
-    const soft = toRgba(announcementColor, 0.32);
-    const border = toRgba(announcementColor, 1);
-    const glow = toRgba(announcementColor, 0.78);
-    article.style.setProperty('--announcement-bg', strong);
-    article.style.setProperty('--announcement-bg-soft', soft);
-    article.style.setProperty('--announcement-border', border);
-    article.style.setProperty('--announcement-glow', glow);
-    article.style.setProperty('--announcement-inline-bg', `linear-gradient(90deg, ${strong}, ${soft}), rgba(10, 12, 20, 0.34)`);
-    article.style.setProperty('--announcement-inline-shadow', `inset 0 0 0 1px rgba(255,255,255,0.10), 0 12px 34px rgba(0,0,0,0.34), 0 0 38px ${glow}`);
+    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.66));
+    article.style.setProperty('--announcement-bg-soft', toRgba(announcementColor, 0.28));
+    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.98));
+    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.72));
+    if (CONFIG.style === 'cards') {
+      article.classList.add('announcement-card');
+      article.style.setProperty('border-color', 'var(--announcement-border)', 'important');
+      article.style.setProperty('background', 'linear-gradient(90deg, var(--announcement-bg), var(--announcement-bg-soft)), rgba(10, 12, 20, 0.42)', 'important');
+      article.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 12px 34px rgba(0, 0, 0, 0.32), 0 0 38px var(--announcement-glow)', 'important');
+    }
   }
 
   if (showAvatar) {
@@ -809,7 +809,6 @@ function fallbackUserIcon() {
 function renderMeta(message) {
   const meta = document.createElement('span');
   meta.className = 'meta';
-
   if (CONFIG.platformIcon) meta.appendChild(platformIcon(message.platform));
   if (message.isAnnouncement) meta.appendChild(announcementIcon());
 

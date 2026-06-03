@@ -658,7 +658,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
       <div class="top-actions">
         <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
         <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.10</span>
+        <span class="pill">v0.1.8</span>
       </div>
     </header>
 
@@ -744,7 +744,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
                   <option value="bubbles">Bubble Feed</option>
                   <option value="cards">Stacked Cards</option>
                 </select>
-                <div class="hint">Choose the compact feed, bubble feed, or stacked card layout. Hide profile images, badges, and timestamps to create a lighter compact view.</div>
+                <div class="hint">Start with the current compact format, or switch to bubbles or stacked cards.</div>
               </div>
 
               <div class="field-row">
@@ -1024,10 +1024,16 @@ const defaults = {
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+function normalizeLayoutStyle(value) {
+  return ['compact', 'bubbles', 'cards'].includes(String(value || '').trim().toLowerCase()) ? String(value).trim().toLowerCase() : 'compact';
+}
+
 function loadSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    return { ...defaults, ...saved };
+    const merged = { ...defaults, ...saved };
+    merged.layoutStyle = normalizeLayoutStyle(merged.layoutStyle);
+    return merged;
   } catch (error) {
     console.warn('Unable to load settings. Using defaults.', error);
     return { ...defaults };
@@ -1054,6 +1060,7 @@ function readSettingsFromForm() {
     const key = input.dataset.setting;
     settings[key] = input.type === 'checkbox' ? input.checked : input.value;
   });
+  settings.layoutStyle = normalizeLayoutStyle(settings.layoutStyle);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
@@ -1070,10 +1077,6 @@ function enabledPlatforms() {
   if (settings.platformYoutube) platforms.push('youtube');
   if (settings.platformKick) platforms.push('kick');
   return platforms.join(',') || 'none';
-}
-
-function normalizeLayoutStyle(value) {
-  return value === 'bare' ? 'compact' : value;
 }
 
 function setConnectionPill(mode, text) {

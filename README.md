@@ -1,6 +1,6 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.10`
+Version: `v0.1.8`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
@@ -21,7 +21,7 @@ overlay/
 
 - Twitch, YouTube, and Kick platform toggles
 - Streamer.bot WebSocket connection without required Streamer.bot actions or chat triggers
-- Style dropdown with Standard Compact, Bubble Feed, and Stacked Cards layouts
+- Style dropdown with Standard Compact, Platform-Only Compact, Bubble Feed, and Stacked Cards layouts
 - Optional profile image display
 - Fallback user icon when no profile image URL is available
 - Plain inline platform logo icons for Twitch, YouTube, and Kick indicators
@@ -164,12 +164,12 @@ The preview user/message arrays are stored in `overlay/overlay.js` as:
 
 These are intentionally separated from the renderer logic so preset sample users can be added later.
 
-## v0.1.10 changes
+## v0.1.8 changes
 
 - Fixed preview-stage sizing so the scaled 1920 × 1080 preview no longer crops out of frame.
 - Added two-axis preview controls: Preview/Live source and Zoomed/Scaled view.
 - Set the dashboard to default to Preview + Zoomed view for easier editing.
-- Added message style selection with Standard Compact, Bubble Feed, and Stacked Cards layouts.
+- Added message style selection with Standard Compact, Platform-Only Compact, Bubble Feed, and Stacked Cards layouts.
 - Added `style` URL parameter support for the OBS overlay.
 - Made Twitch announcement highlights more colorful while keeping the glass-style treatment.
 - Added broader Twitch announcement event matching, including `ChatAnnouncement`-style event names.
@@ -186,7 +186,7 @@ For small adjustments after the system is working, edit individual files:
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## Known limitations in v0.1.10
+## Known limitations in v0.1.8
 
 - Profile images depend on whether Streamer.bot includes an image URL in the event payload.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
@@ -194,7 +194,7 @@ For small adjustments after the system is working, edit individual files:
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
 
-## v0.1.10 structure note
+## v0.1.8 structure note
 
 The dashboard CSS and JavaScript are embedded directly in `index.html`.
 
