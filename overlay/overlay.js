@@ -43,6 +43,7 @@ const defaults = {
   ignoredUsers: 'nightbot, streamelements, streamlabs, moobot, fossabot, sery_bot',
   preview: false,
   previewRate: 1800,
+  previewSeed: 'random-chatters',
   previewAuto: true,
   debug: false
 };
@@ -62,6 +63,12 @@ function numberParam(name, fallback, min, max) {
 function normalizeStyle(value) {
   const style = String(value || '').trim().toLowerCase();
   return ['compact', 'bubbles', 'cards'].includes(style) ? style : 'compact';
+}
+
+function normalizePreviewSeed(value) {
+  const seed = String(value || '').trim().toLowerCase();
+  if (['specified-users', 'specified', 'custom-users', 'set-users'].includes(seed)) return 'specified-users';
+  return 'random-chatters';
 }
 
 const CONFIG = {
@@ -107,6 +114,7 @@ const CONFIG = {
   ignoredUsers: query.get('ignoredUsers') || defaults.ignoredUsers,
   preview: boolParam('preview', defaults.preview),
   previewRate: numberParam('previewRate', defaults.previewRate, 400, 10000),
+  previewSeed: normalizePreviewSeed(query.get('previewSeed') || defaults.previewSeed),
   previewAuto: boolParam('previewAuto', defaults.previewAuto),
   debug: boolParam('debug', defaults.debug)
 };
@@ -168,14 +176,37 @@ const EVENT_WISHLIST = {
   ]
 };
 
-const PREVIEW_USERS = [
+const PREVIEW_RANDOM_USERS = [
   { platform: 'twitch', name: 'PixelPickle', color: '#b195ff', mod: true, avatar: 'https://unavatar.io/twitch/pixelpickle' },
   { platform: 'twitch', name: 'RaidCaptain', color: '#71c7ff', shared: true, avatar: 'https://unavatar.io/twitch/raidcaptain' },
-  { platform: 'youtube', name: 'VODWatcher', color: '#ff6680' },
-  { platform: 'youtube', name: 'ClipCollector', color: '#ffd36a', mod: true },
-  { platform: 'kick', name: 'KickCrew', color: '#53fc18' },
-  { platform: 'kick', name: 'GreenRoomer', color: '#a0ff81', mod: true }
+  { platform: 'youtube', name: 'VODWatcher', color: '#CD201F' },
+  { platform: 'youtube', name: 'ClipCollector', color: '#CD201F', mod: true },
+  { platform: 'kick', name: 'KickCrew', color: '#00e701' },
+  { platform: 'kick', name: 'GreenRoomer', color: '#00e701', mod: true }
 ];
+
+const PREVIEW_SPECIFIED_USERS = [
+  {
+    platform: 'twitch',
+    name: 'SlickPickleNick',
+    color: '#9146FF',
+    mod: true,
+    shared: false,
+    avatar: 'https://static-cdn.jtvnw.net/jtv_user_pictures/9c4889dd-5c06-4695-90ff-4e3a42816f67-profile_image-70x70.png'
+  },
+  {
+    platform: 'twitch',
+    name: 'SlickZayyy',
+    color: '#FF0000',
+    mod: true,
+    shared: true,
+    avatar: 'https://static-cdn.jtvnw.net/jtv_user_pictures/15f36780-922d-4eb4-9c30-6eb5b3d4561d-profile_image-70x70.png'
+  }
+];
+
+function getPreviewUserPool() {
+  return CONFIG.previewSeed === 'specified-users' ? PREVIEW_SPECIFIED_USERS : PREVIEW_RANDOM_USERS;
+}
 
 const PREVIEW_MESSAGES = [
   'This compact feed is clean PickleHype',
@@ -516,7 +547,9 @@ function normalizeMessage(platform, type, data) {
     id: messageId,
     userId,
     username,
-    userColor: user.color || data.color || (isAnnouncement ? announcementColor : '') || platformDefaultColor(platform),
+    userColor: platform === 'youtube' || platform === 'kick'
+      ? platformDefaultColor(platform)
+      : user.color || data.color || (isAnnouncement ? announcementColor : '') || platformDefaultColor(platform),
     avatarUrl,
     text: rawText,
     parts: Array.isArray(data.parts) ? data.parts : null,
@@ -676,8 +709,8 @@ function toRgba(color, alpha) {
 
 function platformDefaultColor(platform) {
   if (platform === 'twitch') return '#b195ff';
-  if (platform === 'youtube') return '#ff6680';
-  if (platform === 'kick') return '#8cff64';
+  if (platform === 'youtube') return '#CD201F';
+  if (platform === 'kick') return '#00e701';
   return '#ffffff';
 }
 
@@ -1123,8 +1156,10 @@ function startPreview() {
 }
 
 function randomPreviewMessage() {
-  const availableUsers = PREVIEW_USERS.filter((user) => isPlatformEnabled(user.platform));
-  const user = availableUsers[Math.floor(Math.random() * availableUsers.length)] || PREVIEW_USERS[0];
+  const pool = getPreviewUserPool();
+  const availableUsers = pool.filter((user) => isPlatformEnabled(user.platform));
+  const fallbackPool = pool.length ? pool : PREVIEW_RANDOM_USERS;
+  const user = availableUsers[Math.floor(Math.random() * availableUsers.length)] || fallbackPool[0] || PREVIEW_RANDOM_USERS[0];
   const text = PREVIEW_MESSAGES[Math.floor(Math.random() * PREVIEW_MESSAGES.length)];
   const isAnnouncement = user.platform === 'twitch' && /announcement test/i.test(text);
   const announcementColor = isAnnouncement ? ['#9146ff', '#3ea6ff', '#00db84', '#ff9f1c'][Math.floor(Math.random() * 4)] : null;

@@ -734,7 +734,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
       </div>
       <div class="top-actions">
         <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
-        <span class="pill">v0.1.11</span>
+        <span class="pill">v0.1.12</span>
       </div>
     </header>
 
@@ -989,7 +989,11 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
                 </div>
                 <div class="field">
                   <label for="previewSeed">Preview seed label</label>
-                  <input id="previewSeed" data-setting="previewSeed" type="text" />
+                  <select id="previewSeed" data-setting="previewSeed">
+                    <option value="random-chatters">Random chatters</option>
+                    <option value="specified-users">Specified users</option>
+                  </select>
+                  <div class="hint">Choose whether preview messages use the fake chatter pool or your specified user list.</div>
                 </div>
               </div>
 
@@ -1107,7 +1111,7 @@ const defaults = {
   ignoreInternal: true,
   ignoredUsers: 'nightbot, streamelements, streamlabs, moobot, fossabot, sery_bot',
   previewRate: '1800',
-  previewSeed: 'random-fake-users',
+  previewSeed: 'random-chatters',
   previewAuto: true
 };
 

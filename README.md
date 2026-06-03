@@ -1,6 +1,6 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.11`
+Version: `v0.1.13`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
@@ -54,7 +54,7 @@ overlay/
 - Timeout/ban cleanup handling where platform event data is available
 - Ignored user/bot list
 - Ignore command messages option
-- Preview mode with random fake users/messages
+- Preview mode with preset sample Twitch users and generated sample messages
 - Live preview mode with connection status from the overlay iframe
 - Twitch announcement highlighting with bell icon and announcement-color styling
 
@@ -155,14 +155,22 @@ When GIF mod-only mode is enabled, GIF previews only display for users detected 
 
 ## Preview and live mode
 
-The dashboard preview iframe can run in two modes. Preview mode loads `overlay/overlay.html` with `preview=1` and creates random fake messages from Twitch, YouTube, and Kick. Live mode loads the same overlay URL without `preview=1`, connects to Streamer.bot, and displays real messages.
+The dashboard preview iframe can run in two modes. Preview mode loads `overlay/overlay.html` with `preview=1` and creates generated sample messages from Twitch, YouTube, and Kick using the preset preview-user list. Live mode loads the same overlay URL without `preview=1`, connects to Streamer.bot, and displays real messages.
 
 The preview user/message arrays are stored in `overlay/overlay.js` as:
 
 - `PREVIEW_USERS`
 - `PREVIEW_MESSAGES`
 
-These are intentionally separated from the renderer logic so preset sample users can be added later.
+These are intentionally separated from the renderer logic so preset sample users and messages can be edited later.
+
+## v0.1.13 changes
+
+- Updated default YouTube username color to `#CD201F`.
+- Updated default Kick username color to `#00e701`.
+- Forced YouTube and Kick chatters to use their platform default username colors instead of custom/user-provided colors.
+- Updated preview Twitch users to SlickPickleNick and SlickZayyy with the provided profile image URLs.
+- Kept the existing preview message list.
 
 ## v0.1.11 changes
 
@@ -185,7 +193,7 @@ For small adjustments after the system is working, edit individual files:
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## Known limitations in v0.1.11
+## Known limitations in v0.1.13
 
 - Profile images depend on whether Streamer.bot includes an image URL in the event payload.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
@@ -193,7 +201,7 @@ For small adjustments after the system is working, edit individual files:
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
 
-## v0.1.11 structure note
+## v0.1.13 structure note
 
 The dashboard CSS and JavaScript are embedded directly in `index.html`.
 
@@ -216,3 +224,8 @@ overlay/
 ```
 
 `README.md` is documentation only and is not required for the live overlay to run.
+
+
+## v0.1.13 notes
+
+- Added preview user set switching between random chatters and specified users.
