@@ -14,8 +14,10 @@ const defaults = {
   badges: true,
   sharedBadge: true,
   fade: true,
+  textShadow: true,
   overlayWidth: 450,
   overlayHeight: 1080,
+  overlayPaddingLeft: 20,
   maxMessages: 14,
   duration: 0,
   font: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -69,8 +71,10 @@ const CONFIG = {
   badges: boolParam('badges', defaults.badges),
   sharedBadge: boolParam('sharedBadge', defaults.sharedBadge),
   fade: boolParam('fade', defaults.fade),
+  textShadow: boolParam('textShadow', defaults.textShadow),
   overlayWidth: numberParam('overlayWidth', defaults.overlayWidth, 160, 1920),
   overlayHeight: numberParam('overlayHeight', defaults.overlayHeight, 120, 1080),
+  overlayPaddingLeft: numberParam('overlayPaddingLeft', defaults.overlayPaddingLeft, 0, 400),
   avatarSize: numberParam('avatarSize', defaults.avatarSize, 16, 96),
   maxMessages: numberParam('maxMessages', defaults.maxMessages, 1, 80),
   duration: numberParam('duration', defaults.duration, 0, 600),
@@ -102,6 +106,7 @@ const CONFIG = {
 
 document.documentElement.style.setProperty('--overlay-width', `${CONFIG.overlayWidth}px`);
 document.documentElement.style.setProperty('--overlay-height', `${CONFIG.overlayHeight}px`);
+document.documentElement.style.setProperty('--overlay-padding-left', `${CONFIG.overlayPaddingLeft}px`);
 document.documentElement.style.setProperty('--avatar-size', `${CONFIG.avatarSize}px`);
 document.documentElement.style.setProperty('--font-size', `${CONFIG.fontSize}px`);
 document.documentElement.style.setProperty('--line-height', CONFIG.lineHeight);
@@ -109,6 +114,7 @@ document.documentElement.style.setProperty('--message-gap', `${CONFIG.gap}px`);
 document.documentElement.style.setProperty('--gif-max-width', `${CONFIG.gifMaxWidth}px`);
 document.body.style.fontFamily = CONFIG.font;
 if (CONFIG.preview) document.body.classList.add('preview-mode');
+if (!CONFIG.textShadow) document.body.classList.add('no-text-shadow');
 
 const feed = document.getElementById('chatFeed');
 const statusEl = document.getElementById('status');
@@ -176,12 +182,6 @@ const PREVIEW_MESSAGES = [
   'Announcement test: chat, this one should be highlighted'
 ];
 
-const PLATFORM_ICON_URLS = {
-  twitch: 'https://cdn.simpleicons.org/twitch/9146FF',
-  youtube: 'https://cdn.simpleicons.org/youtube/FF0033',
-  kick: 'https://cdn.simpleicons.org/kick/53FC18'
-};
-
 const AVATAR_KEYS = [
   'profileImageUrl',
   'imageUrl',
@@ -220,11 +220,22 @@ function log(...args) {
 function setStatus(kind, text, persistent = false) {
   statusEl.className = `system-status ${kind || ''} visible`;
   statusText.textContent = text;
+  postStatus(kind || '', text || '');
   if (!persistent) {
     window.clearTimeout(setStatus.timer);
     setStatus.timer = window.setTimeout(() => {
       statusEl.classList.remove('visible');
     }, 2200);
+  }
+}
+
+function postStatus(kind, text) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'SPN_MULTICHAT_STATUS', status: kind, text }, '*');
+    }
+  } catch (error) {
+    log('Unable to post status to parent', error);
   }
 }
 
@@ -257,6 +268,7 @@ function sendRequest(request) {
 
 function connect() {
   if (CONFIG.preview) return;
+  setStatus('connecting', 'Connecting...', true);
   try {
     socket = new WebSocket(wsUrl());
   } catch (error) {
@@ -267,7 +279,7 @@ function connect() {
 
   socket.addEventListener('open', () => {
     reconnectAttempts = 0;
-    setStatus('connected', 'Connected');
+    setStatus('connected', 'Connected!');
     log('Connected to Streamer.bot WebSocket');
   });
 
@@ -343,7 +355,13 @@ function subscribeToEvents() {
     const enabled = source === 'Twitch' ? isPlatformEnabled('twitch') : source === 'YouTube' ? isPlatformEnabled('youtube') : isPlatformEnabled('kick');
     if (!enabled) return;
     const available = getAvailableForSource(source);
-    const selected = available ? wanted.filter((eventName) => available.includes(eventName)) : wanted;
+    let selected = available ? wanted.filter((eventName) => available.some((item) => String(item).toLowerCase() === eventName.toLowerCase())) : wanted;
+    if (available && !selected.length) selected = wanted;
+    if (source === 'Twitch') {
+      ['Announcement', 'SharedChatAnnouncement'].forEach((eventName) => {
+        if (!selected.includes(eventName)) selected.push(eventName);
+      });
+    }
     if (selected.length) events[source] = selected;
   });
 
@@ -359,15 +377,47 @@ function subscribeToEvents() {
 
 function getAvailableForSource(source) {
   if (!availableEvents) return null;
+  if (Array.isArray(availableEvents)) {
+    const match = availableEvents.find((item) => {
+      const itemSource = item?.source || item?.name || item?.id || '';
+      return String(itemSource).toLowerCase() === source.toLowerCase();
+    });
+    return flattenEventNames(match || availableEvents);
+  }
   const keys = Object.keys(availableEvents);
   const match = keys.find((key) => key.toLowerCase() === source.toLowerCase());
-  return match ? availableEvents[match] : null;
+  if (!match) return null;
+  return flattenEventNames(availableEvents[match]);
+}
+
+function flattenEventNames(value) {
+  const names = [];
+  const visit = (item) => {
+    if (!item) return;
+    if (typeof item === 'string') {
+      names.push(item.trim());
+      return;
+    }
+    if (Array.isArray(item)) {
+      item.forEach(visit);
+      return;
+    }
+    if (typeof item === 'object') {
+      const direct = item.type || item.name || item.event || item.eventName || item.id;
+      if (typeof direct === 'string') names.push(direct.trim());
+      Object.values(item).forEach((child) => {
+        if (Array.isArray(child) || (child && typeof child === 'object')) visit(child);
+      });
+    }
+  };
+  visit(value);
+  return Array.from(new Set(names.filter(Boolean)));
 }
 
 function handleStreamerEvent(payload) {
   const eventInfo = payload.event || payload.Event || {};
   const source = normalizeSource(eventInfo.source || payload.source || payload.Source || '');
-  const type = eventInfo.type || payload.type || payload.Type || '';
+  const type = String(eventInfo.type || payload.type || payload.Type || '').trim();
   const data = payload.data || payload.Data || payload;
   const platform = sourceToPlatform(source);
 
@@ -432,8 +482,9 @@ function normalizeMessage(platform, type, data) {
   if (CONFIG.ignoreInternal && (data.isTest || data.isInternal || data.meta?.isTest || data.meta?.internal)) return null;
 
   const user = data.user || data.author || data.sender || data.chatter || {};
+  const isAnnouncement = platform === 'twitch' && /announcement/i.test(String(type || ''));
   const username =
-    user.displayName || user.name || user.username || user.login || data.displayName || data.userName || data.username || 'Unknown User';
+    user.displayName || user.name || user.username || user.login || data.displayName || data.userName || data.username || (isAnnouncement ? 'Announcement' : 'Unknown User');
   const normalizedName = normalizeName(username);
   if (!normalizedName || ignoredUsers.has(normalizedName)) return null;
 
@@ -446,7 +497,6 @@ function normalizeMessage(platform, type, data) {
   const badges = Array.isArray(user.badges) ? user.badges : Array.isArray(data.badges) ? data.badges : [];
   const isShared = Boolean(data.isInSharedChat || data.isFromSharedChatGuest || data.sharedChatSource || data.source);
   const sharedSource = data.sharedChatSource || data.source || null;
-  const isAnnouncement = platform === 'twitch' && /announcement/i.test(String(type || ''));
   const announcementColor = isAnnouncement ? normalizeAnnouncementColor(data.announcementColor) : null;
   const avatarUrl = getAvatarUrl(user, data, platform, normalizedName);
 
@@ -455,7 +505,7 @@ function normalizeMessage(platform, type, data) {
     type,
     id: messageId,
     userId,
-    username: isAnnouncement && username === 'Unknown User' ? 'Announcement' : username,
+    username,
     userColor: user.color || data.color || (isAnnouncement ? announcementColor : '') || platformDefaultColor(platform),
     avatarUrl,
     text: rawText,
@@ -472,11 +522,12 @@ function normalizeMessage(platform, type, data) {
 }
 
 function getMessageText(data) {
-  if (typeof data.text === 'string') return data.text;
-  if (typeof data.message === 'string') return data.message;
-  if (typeof data.content === 'string') return data.content;
-  if (typeof data.body === 'string') return data.body;
-  if (Array.isArray(data.parts)) return data.parts.map((part) => part?.text || part?.name || '').join('');
+  if (typeof data.text === 'string' && data.text) return data.text;
+  if (typeof data.message === 'string' && data.message) return data.message;
+  if (typeof data.systemMessage === 'string' && data.systemMessage) return data.systemMessage;
+  if (typeof data.content === 'string' && data.content) return data.content;
+  if (typeof data.body === 'string' && data.body) return data.body;
+  if (Array.isArray(data.parts)) return data.parts.map((part) => part?.text || part?.name || part?.value || '').join('');
   return '';
 }
 
@@ -784,17 +835,7 @@ function platformIcon(platform) {
   const icon = document.createElement('span');
   icon.className = `platform-icon ${platform}`;
   icon.title = platformLabel(platform);
-
-  const img = document.createElement('img');
-  img.src = PLATFORM_ICON_URLS[platform] || '';
-  img.alt = '';
-  img.decoding = 'async';
-  img.referrerPolicy = 'no-referrer';
-  img.onerror = () => {
-    img.remove();
-    icon.appendChild(fallbackPlatformMark(platform));
-  };
-  icon.appendChild(img);
+  icon.appendChild(platformSvg(platform));
   return icon;
 }
 
@@ -805,15 +846,14 @@ function platformLabel(platform) {
   return 'Platform';
 }
 
-function fallbackPlatformMark(platform) {
+function platformSvg(platform) {
   const wrapper = document.createElement('span');
-  wrapper.className = 'platform-fallback-mark';
   if (platform === 'youtube') {
-    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.9 12l-6.3 3.6Z"/></svg>';
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF0033" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.9 12l-6.3 3.6Z"/></svg>';
   } else if (platform === 'twitch') {
-    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.6 4.7h1.7v5.1h-1.7Zm4.7 0H18v5.1h-1.7ZM6 0 1.7 4.3v15.4h5.1V24l4.3-4.3h3.4L22.3 12V0Zm14.6 11.1-3.4 3.4h-3.4l-3 3v-3H6.9V1.7h13.7Z"/></svg>';
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#9146FF" d="M11.6 4.7h1.7v5.1h-1.7Zm4.7 0H18v5.1h-1.7ZM6 0 1.7 4.3v15.4h5.1V24l4.3-4.3h3.4L22.3 12V0Zm14.6 11.1-3.4 3.4h-3.4l-3 3v-3H6.9V1.7h13.7Z"/></svg>';
   } else {
-    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 3h6.6v5.2h2.1L16.8 3H24l-6.3 7.8L24 21h-7.5l-3.9-6.4h-2V21H4Z"/></svg>';
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#53FC18" d="M4 3h6.6v5.2h2.1L16.8 3H24l-6.3 7.8L24 21h-7.5l-3.9-6.4h-2V21H4Z"/></svg>';
   }
   return wrapper.firstElementChild;
 }

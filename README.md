@@ -1,6 +1,6 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.6`
+Version: `v0.1.7`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
@@ -23,10 +23,8 @@ overlay/
 - Streamer.bot WebSocket connection without required Streamer.bot actions or chat triggers
 - Compact chat feed layout
 - Optional profile image display
-- Profile image size control, defaulting to `34px`
 - Fallback user icon when no profile image URL is available
-- Best-effort Twitch avatar lookup when Streamer.bot does not include a Twitch profile image URL
-- Actual platform logo images for Twitch, YouTube, and Kick indicators
+- Plain inline platform logo icons for Twitch, YouTube, and Kick indicators
 - Optional platform icon display
 - Optional 12-hour timestamp, such as `5:55 AM`
 - Optional user badges
@@ -35,7 +33,10 @@ overlay/
 - Max message count control
 - Overlay width and height controls
 - Default overlay size: `450 × 1080`
-- Dashboard preview that simulates a scaled `1920 × 1080` stream canvas
+- Profile image size control
+- Left overlay padding control, default `20px`
+- Text shadow toggle
+- Dashboard preview and live preview switch using a scaled `1920 × 1080` stream canvas
 - Font family, font size, line height, and message gap controls
 - Twitch native emote rendering when Streamer.bot provides emote data
 - BTTV global emote support
@@ -52,7 +53,8 @@ overlay/
 - Ignored user/bot list
 - Ignore command messages option
 - Preview mode with random fake users/messages
-- Twitch announcement highlighting with a bell icon and announcement-color styling
+- Live preview mode with connection status from the overlay iframe
+- Twitch announcement highlighting with bell icon and announcement-color styling
 
 ## GitHub Pages setup
 
@@ -93,8 +95,6 @@ The overlay connects to the Streamer.bot WebSocket Server, requests the availabl
 Primary chat events used:
 
 - `Twitch.ChatMessage`
-- `Twitch.Announcement`
-- `Twitch.SharedChatAnnouncement`
 - `YouTube.Message`
 - `Kick.ChatMessage`
 
@@ -147,13 +147,13 @@ The message renderer replaces exact token matches with the matching emote image.
 
 ## GIF link support
 
-When GIF support is enabled, direct `.gif` links in chat are shown as inline GIF previews. GIF mod-only mode is enabled by default in v0.1.6.
+When GIF support is enabled, direct `.gif` links in chat are shown as inline GIF previews.
 
 When GIF mod-only mode is enabled, GIF previews only display for users detected as moderators, broadcasters, staff, or equivalent role/badge holders. Other GIF links display as hidden fallback text.
 
-## Preview mode
+## Preview and live mode
 
-The dashboard preview iframe loads `overlay/overlay.html` with `preview=1`. Preview mode creates random fake messages from Twitch, YouTube, and Kick.
+The dashboard preview iframe can run in two modes. Preview mode loads `overlay/overlay.html` with `preview=1` and creates random fake messages from Twitch, YouTube, and Kick. Live mode loads the same overlay URL without `preview=1`, connects to Streamer.bot, and displays real messages.
 
 The preview user/message arrays are stored in `overlay/overlay.js` as:
 
@@ -161,6 +161,17 @@ The preview user/message arrays are stored in `overlay/overlay.js` as:
 - `PREVIEW_MESSAGES`
 
 These are intentionally separated from the renderer logic so preset sample users can be added later.
+
+## v0.1.7 changes
+
+- Fixed the dashboard preview iframe to sit inside a true scaled 1920 × 1080 preview stage.
+- Added preview/live mode buttons in the dashboard preview panel.
+- Added a dashboard connection pill that receives Connecting, Connected, and Disconnected states from the live overlay iframe.
+- Added text shadow toggle support.
+- Added left padding control for the chat feed, defaulting to `20px`.
+- Changed platform icons to inline logo SVGs with no app-style square background.
+- Improved Twitch announcement subscription and parsing for `Twitch.Announcement` and `Twitch.SharedChatAnnouncement`.
+- Updated the generated URL section to more closely match the Breaking News Overlay layout.
 
 ## Recommended workflow for future edits
 
@@ -174,29 +185,16 @@ For small adjustments after the system is working, edit individual files:
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## v0.1.6 changes
+## Known limitations in v0.1.7
 
-- Added chat width control to the dashboard.
-- Added chat height control to the dashboard.
-- Added profile image size control.
-- Increased default profile image size to `34px`.
-- Fixed the preview frame structure so it renders inside a true scaled `1920 × 1080` canvas.
-- Changed platform icons to plain logo images without colored bounding boxes.
-- Changed GIF mod-only mode to enabled by default.
-- Added Twitch announcement event subscriptions.
-- Added announcement bubble highlighting with a bell icon and announcement-color styling.
-- Added best-effort Twitch avatar lookup for cases where Streamer.bot does not provide a Twitch profile image URL.
-
-## Known limitations in v0.1.6
-
-- Profile images primarily depend on whether Streamer.bot includes an image URL in the event payload. Twitch profile images use a best-effort external fallback when the payload does not include one.
+- Profile images depend on whether Streamer.bot includes an image URL in the event payload.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
 - Twitch native emotes require Streamer.bot to provide emote index/image data.
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
 - Style dropdowns are not included yet. This version is compact-feed only.
 
-## v0.1.6 structure note
+## v0.1.7 structure note
 
 The dashboard CSS and JavaScript are embedded directly in `index.html`.
 

@@ -152,6 +152,9 @@ h1 {
   box-shadow: 0 0 14px currentColor;
 }
 .dot.preview { background: var(--accent-2); }
+.dot.connecting { background: var(--warning); }
+.dot.connected { background: var(--success); }
+.dot.disconnected { background: var(--danger); }
 
 .grid {
   min-height: 0;
@@ -445,30 +448,63 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   flex-wrap: wrap;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  gap: 4px;
+}
+
+.mode-btn {
+  min-height: 28px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.mode-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(120, 105, 255, 0.96), rgba(46, 166, 255, 0.86));
+  box-shadow: 0 0 20px rgba(120, 105, 255, 0.26);
+}
+
 .preview-frame-wrap {
   min-height: 0;
-  padding: 14px;
+  padding: 18px;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
+  place-items: center;
   gap: 10px;
-  align-items: center;
   background:
-    linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%),
-    linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%);
-  background-position: 0 0, 16px 16px;
-  background-size: 32px 32px;
+    linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.035) 75%),
+    linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.035) 75%),
+    rgba(0, 0, 0, 0.16);
+  background-position: 0 0, 16px 16px, 0 0;
+  background-size: 32px 32px, 32px 32px, auto;
 }
 
 .preview-size-note {
+  width: 100%;
   color: rgba(255, 255, 255, 0.52);
+  font-size: 0.82rem;
 }
 
 .preview-stage {
   --preview-scale: 0.5;
   position: relative;
   width: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 100%;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -476,7 +512,9 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
     radial-gradient(circle at 18% 16%, rgba(120, 105, 255, 0.17), transparent 34rem),
     radial-gradient(circle at 80% 12%, rgba(46, 166, 255, 0.13), transparent 28rem),
     rgba(5, 7, 17, 0.76);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
 .preview-stage::before {
@@ -505,6 +543,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   display: block;
   transform: scale(var(--preview-scale));
   transform-origin: top left;
+  pointer-events: none;
 }
 
 .url-panel {
@@ -516,13 +555,44 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 .url-body {
   padding: 14px;
   display: grid;
+  gap: 12px;
+}
+
+.url-textarea {
+  min-height: 74px;
+  max-height: 110px;
+  resize: vertical;
+  font-size: 0.76rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.url-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 10px;
+.info-card {
+  min-height: 78px;
+  padding: 13px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.info-card strong {
+  display: block;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.info-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .copy-status {
@@ -569,9 +639,9 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
         </div>
       </div>
       <div class="top-actions">
-        <span class="pill"><span class="dot preview"></span><strong>Preview</strong> mode enabled</span>
+        <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
         <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.6</span>
+        <span class="pill">v0.1.4</span>
       </div>
     </header>
 
@@ -653,13 +723,25 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
               <div class="field-row">
                 <div class="field">
                   <label for="overlayWidth">Chat width</label>
-                  <input id="overlayWidth" data-setting="overlayWidth" type="number" min="160" max="1920" step="10" />
+                  <input id="overlayWidth" data-setting="overlayWidth" type="number" min="160" max="1920" step="1" />
                   <div class="hint">Default: 450px.</div>
                 </div>
                 <div class="field">
                   <label for="overlayHeight">Chat height</label>
-                  <input id="overlayHeight" data-setting="overlayHeight" type="number" min="120" max="1080" step="10" />
+                  <input id="overlayHeight" data-setting="overlayHeight" type="number" min="120" max="1080" step="1" />
                   <div class="hint">Default: 1080px.</div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="avatarSize">Profile image size</label>
+                  <input id="avatarSize" data-setting="avatarSize" type="number" min="16" max="96" step="1" />
+                </div>
+                <div class="field">
+                  <label for="overlayPaddingLeft">Left padding</label>
+                  <input id="overlayPaddingLeft" data-setting="overlayPaddingLeft" type="number" min="0" max="400" step="1" />
+                  <div class="hint">Distance from browser-source left edge.</div>
                 </div>
               </div>
 
@@ -697,18 +779,6 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
                 </div>
               </div>
 
-              <div class="field-row">
-                <div class="field">
-                  <label for="avatarSize">Profile image size</label>
-                  <input id="avatarSize" data-setting="avatarSize" type="number" min="16" max="96" step="1" />
-                  <div class="hint">Default: 34px.</div>
-                </div>
-                <div class="field">
-                  <label>Platform logos</label>
-                  <div class="hint">Rendered as plain logo marks with no color container.</div>
-                </div>
-              </div>
-
               <div class="toggle-grid">
                 <label class="toggle"><span>Profile image</span><input data-setting="showAvatar" type="checkbox" /><span class="switch"></span></label>
                 <label class="toggle"><span>Platform icon</span><input data-setting="showPlatformIcon" type="checkbox" /><span class="switch"></span></label>
@@ -716,6 +786,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
                 <label class="toggle"><span>User badges</span><input data-setting="showBadges" type="checkbox" /><span class="switch"></span></label>
                 <label class="toggle"><span>Shared chat badge</span><input data-setting="showSharedBadge" type="checkbox" /><span class="switch"></span></label>
                 <label class="toggle"><span>Fade animation</span><input data-setting="fadeAnimation" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Text shadows</span><input data-setting="textShadow" type="checkbox" /><span class="switch"></span></label>
               </div>
             </div>
           </details>
@@ -825,6 +896,10 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
               <p class="panel-note">Uses the same <span class="mini-kbd">overlay/overlay.html</span> file with <span class="mini-kbd">preview=1</span>.</p>
             </div>
             <div class="preview-actions">
+              <div class="mode-toggle" aria-label="Preview mode switch">
+                <button class="mode-btn active" id="previewModeBtn" type="button">Preview</button>
+                <button class="mode-btn" id="liveModeBtn" type="button">Live</button>
+              </div>
               <button class="btn" id="injectBtn" type="button">Inject Random</button>
             </div>
           </div>
@@ -839,15 +914,23 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
         <div class="panel url-panel">
           <div class="panel-head">
             <div>
-              <h2 class="panel-title">OBS Overlay Link</h2>
+              <h2 class="panel-title">Generated Browser Source URL</h2>
               <p class="panel-note">Paste this into an OBS Browser Source. The URL updates as controls change.</p>
+            </div>
+            <div class="preview-actions">
+              <button class="btn primary" id="copyBtn" type="button">Copy URL</button>
+              <button class="btn" id="openBtn" type="button">Open Overlay</button>
             </div>
           </div>
           <div class="url-body">
-            <div class="url-row">
-              <input id="obsUrl" type="text" readonly aria-label="Generated OBS overlay URL" />
-              <button class="btn" id="copyBtn" type="button">Copy</button>
-              <button class="btn" id="openBtn" type="button">Open</button>
+            <div class="field">
+              <label for="obsUrl">OBS Browser Source URL</label>
+              <textarea class="url-textarea" id="obsUrl" readonly aria-label="Generated OBS overlay URL"></textarea>
+            </div>
+            <div class="info-grid">
+              <div class="info-card"><strong>OBS Site</strong><span>Set Browser Source width to 1920 and height to 1080.</span></div>
+              <div class="info-card"><strong>Streamer.bot</strong><span>Use 127.0.0.1, port 8080, endpoint / for local testing.</span></div>
+              <div class="info-card"><strong>Custom CSS</strong><span>Leave OBS custom CSS empty unless intentionally overriding the overlay.</span></div>
             </div>
             <div class="copy-status" id="copyStatus">Ready.</div>
           </div>
@@ -856,7 +939,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
     </section>
   </main>
   <script>
-const STORAGE_KEY = 'spn-multichat-settings-v016';
+const STORAGE_KEY = 'spn-multichat-settings-v017';
 
 const defaults = {
   baseUrl: new URL('overlay/overlay.html', window.location.href).href,
@@ -874,8 +957,10 @@ const defaults = {
   showBadges: true,
   showSharedBadge: true,
   fadeAnimation: true,
+  textShadow: true,
   overlayWidth: '450',
   overlayHeight: '1080',
+  overlayPaddingLeft: '20',
   avatarSize: '34',
   maxMessages: '14',
   duration: '0',
@@ -919,6 +1004,8 @@ function loadSettings() {
 
 let settings = loadSettings();
 let debounceTimer = null;
+let previewMode = 'preview';
+let lastLiveStatus = { status: 'connecting', text: 'Connecting...' };
 
 function applySettingsToForm() {
   $$('[data-setting]').forEach((input) => {
@@ -952,6 +1039,43 @@ function enabledPlatforms() {
   return platforms.join(',') || 'none';
 }
 
+function setConnectionPill(mode, text) {
+  const dot = $('#connectionDot');
+  const label = $('#connectionLabel');
+  const body = $('#connectionText');
+  if (!dot || !label || !body) return;
+  dot.className = `dot ${mode || 'preview'}`;
+  if (mode === 'connected') {
+    label.textContent = 'Connected';
+    body.textContent = text && text !== 'Connected!' ? text : '';
+  } else if (mode === 'connecting') {
+    label.textContent = 'Connecting';
+    body.textContent = text && text !== 'Connecting...' ? text : '';
+  } else if (mode === 'disconnected') {
+    label.textContent = 'Disconnected';
+    body.textContent = text && text !== 'Disconnected' ? text : '';
+  } else {
+    label.textContent = 'Preview';
+    body.textContent = 'mode enabled';
+  }
+}
+
+function setLiveStatus(status, text) {
+  lastLiveStatus = { status: status || 'connecting', text: text || '' };
+  if (previewMode !== 'live') return;
+  setConnectionPill(lastLiveStatus.status, lastLiveStatus.text);
+}
+
+function setPreviewMode(mode) {
+  previewMode = mode === 'live' ? 'live' : 'preview';
+  $('#previewModeBtn')?.classList.toggle('active', previewMode === 'preview');
+  $('#liveModeBtn')?.classList.toggle('active', previewMode === 'live');
+  $('#injectBtn').disabled = previewMode !== 'preview';
+  if (previewMode === 'preview') setConnectionPill('preview', 'mode enabled');
+  else setConnectionPill(lastLiveStatus.status || 'connecting', lastLiveStatus.text || 'Connecting...');
+  updateUrls({ reloadPreview: true });
+}
+
 function buildUrl({ preview = false } = {}) {
   let base = settings.baseUrl || defaults.baseUrl;
   let url;
@@ -969,14 +1093,16 @@ function buildUrl({ preview = false } = {}) {
   addParam(params, 'endpoint', settings.endpoint);
   addParam(params, 'password', settings.password);
   addParam(params, 'avatar', settings.showAvatar);
-  addParam(params, 'avatarSize', settings.avatarSize);
   addParam(params, 'platformIcon', settings.showPlatformIcon);
   addParam(params, 'time', settings.showTime);
   addParam(params, 'badges', settings.showBadges);
   addParam(params, 'sharedBadge', settings.showSharedBadge);
   addParam(params, 'fade', settings.fadeAnimation);
+  addParam(params, 'textShadow', settings.textShadow);
   addParam(params, 'overlayWidth', settings.overlayWidth);
   addParam(params, 'overlayHeight', settings.overlayHeight);
+  addParam(params, 'overlayPaddingLeft', settings.overlayPaddingLeft);
+  addParam(params, 'avatarSize', settings.avatarSize);
   addParam(params, 'maxMessages', settings.maxMessages);
   addParam(params, 'duration', settings.duration);
   addParam(params, 'font', settings.fontFamily);
@@ -1010,11 +1136,14 @@ function buildUrl({ preview = false } = {}) {
 
 function updateUrls({ reloadPreview = false } = {}) {
   const obsUrl = buildUrl({ preview: false });
-  const previewUrl = buildUrl({ preview: true });
+  const previewUrl = buildUrl({ preview: previewMode === 'preview' });
   $('#obsUrl').value = obsUrl;
 
   const frame = $('#previewFrame');
-  if (reloadPreview || frame.src !== previewUrl) frame.src = previewUrl;
+  if (reloadPreview || frame.src !== previewUrl) {
+    if (previewMode === 'live') setLiveStatus('connecting', 'Connecting...');
+    frame.src = previewUrl;
+  }
 }
 
 function scheduleUpdate() {
@@ -1054,17 +1183,25 @@ function injectRandom() {
 
 
 function resizePreviewStage() {
-  const wrap = $('#previewStage');
-  if (!wrap) return;
-  const scale = Math.min(1, wrap.clientWidth / 1920, wrap.clientHeight / 1080);
-  wrap.style.setProperty('--preview-scale', String(scale));
+  const stage = $('#previewStage');
+  const wrap = stage?.parentElement;
+  if (!stage || !wrap) return;
+  const availableWidth = Math.max(1, wrap.clientWidth);
+  const availableHeight = Math.max(1, wrap.clientHeight - 30);
+  const width = Math.min(availableWidth, availableHeight * (16 / 9));
+  const height = width * (9 / 16);
+  const scale = width / 1920;
+  stage.style.width = `${width}px`;
+  stage.style.height = `${height}px`;
+  stage.style.setProperty('--preview-scale', String(scale));
 }
 
 function updatePreviewDimensions() {
   const width = Number(settings.overlayWidth) || Number(defaults.overlayWidth);
   const height = Number(settings.overlayHeight) || Number(defaults.overlayHeight);
+  const padding = Number(settings.overlayPaddingLeft) || 0;
   const note = $('#previewSizeNote');
-  if (note) note.textContent = `Preview uses a scaled 1920×1080 canvas. Chat limit: ${width}px × ${height}px.`;
+  if (note) note.textContent = `Preview uses a scaled 1920×1080 canvas. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px.`;
 }
 
 function resetSettings() {
@@ -1079,6 +1216,7 @@ function resetSettings() {
 
 applySettingsToForm();
 updatePreviewDimensions();
+setConnectionPill('preview', 'mode enabled');
 updateUrls({ reloadPreview: true });
 resizePreviewStage();
 
@@ -1090,7 +1228,14 @@ $('#copyBtn').addEventListener('click', copyUrl);
 $('#openBtn').addEventListener('click', openOverlay);
 $('#refreshBtn').addEventListener('click', refreshPreview);
 $('#injectBtn').addEventListener('click', injectRandom);
+$('#previewModeBtn').addEventListener('click', () => setPreviewMode('preview'));
+$('#liveModeBtn').addEventListener('click', () => setPreviewMode('live'));
 $('#resetBtn').addEventListener('click', resetSettings);
+
+window.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type === 'SPN_MULTICHAT_STATUS') setLiveStatus(data.status, data.text);
+});
 
 window.addEventListener('resize', resizePreviewStage);
 
