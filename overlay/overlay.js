@@ -752,12 +752,11 @@ function renderMessage(message) {
     article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.66));
     article.style.setProperty('--announcement-bg-soft', toRgba(announcementColor, 0.28));
     article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.98));
-    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.72));
     if (CONFIG.style === 'cards') {
       article.classList.add('announcement-card');
       article.style.setProperty('border-color', 'var(--announcement-border)', 'important');
       article.style.setProperty('background', 'linear-gradient(90deg, var(--announcement-bg), var(--announcement-bg-soft)), rgba(10, 12, 20, 0.42)', 'important');
-      article.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 12px 34px rgba(0, 0, 0, 0.32), 0 0 38px var(--announcement-glow)', 'important');
+      article.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 12px 34px rgba(0, 0, 0, 0.32)', 'important');
     }
   }
 

@@ -388,6 +388,73 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   background: white;
 }
 
+
+.toggle span:first-of-type {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.moderation-grid {
+  grid-template-columns: 1fr;
+}
+
+.platform-list {
+  display: grid;
+  gap: 10px;
+}
+
+.platform-row {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.platform-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.platform-row .platform-mark {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.platform-row .platform-mark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.platform-row .platform-name {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.platform-row input:checked + .switch {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 22px rgba(120, 105, 255, 0.25);
+}
+
+.platform-row input:checked + .switch::after {
+  left: 19px;
+  background: white;
+}
+
 .footer-controls {
   padding: 14px;
   border-top: 1px solid var(--line-soft);
@@ -667,8 +734,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
       </div>
       <div class="top-actions">
         <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
-        <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.8</span>
+        <span class="pill">v0.1.11</span>
       </div>
     </header>
 
@@ -682,7 +748,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
         </div>
 
         <div class="control-stack">
-          <details class="control-group" open>
+          <details class="control-group">
             <summary>
               <span class="summary-text"><strong>Connection</strong><span>Streamer.bot WebSocket and generated overlay path.</span></span>
               <span class="chev">›</span>
@@ -727,21 +793,36 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
             </div>
           </details>
 
-          <details class="control-group" open>
+          <details class="control-group">
             <summary>
               <span class="summary-text"><strong>Platforms</strong><span>Choose which message sources appear in the feed.</span></span>
               <span class="chev">›</span>
             </summary>
             <div class="group-body">
-              <div class="toggle-grid">
-                <label class="toggle"><span>Twitch</span><input data-setting="platformTwitch" type="checkbox" /><span class="switch"></span></label>
-                <label class="toggle"><span>YouTube</span><input data-setting="platformYoutube" type="checkbox" /><span class="switch"></span></label>
-                <label class="toggle"><span>Kick</span><input data-setting="platformKick" type="checkbox" /><span class="switch"></span></label>
+              <div class="platform-list">
+                <label class="platform-row twitch-row">
+                  <span class="platform-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="#9146FF" d="M11.6 4.7h1.7v5.1h-1.7Zm4.7 0H18v5.1h-1.7ZM6 0 1.7 4.3v15.4h5.1V24l4.3-4.3h3.4L22.3 12V0Zm14.6 11.1-3.4 3.4h-3.4l-3 3v-3H6.9V1.7h13.7Z"/></svg></span>
+                  <span class="platform-name">Twitch</span>
+                  <input data-setting="platformTwitch" type="checkbox" />
+                  <span class="switch"></span>
+                </label>
+                <label class="platform-row youtube-row">
+                  <span class="platform-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="#FF0033" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.9 12l-6.3 3.6Z"/></svg></span>
+                  <span class="platform-name">YouTube</span>
+                  <input data-setting="platformYoutube" type="checkbox" />
+                  <span class="switch"></span>
+                </label>
+                <label class="platform-row kick-row">
+                  <span class="platform-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="#53FC18" d="M4 3h6.6v5.2h2.1L16.8 3H24l-6.3 7.8L24 21h-7.5l-3.9-6.4h-2V21H4Z"/></svg></span>
+                  <span class="platform-name">Kick</span>
+                  <input data-setting="platformKick" type="checkbox" />
+                  <span class="switch"></span>
+                </label>
               </div>
             </div>
           </details>
 
-          <details class="control-group" open>
+          <details class="control-group">
             <summary>
               <span class="summary-text"><strong>Compact Feed</strong><span>Control visibility, font, spacing, and message lifetime.</span></span>
               <span class="chev">›</span>
@@ -879,7 +960,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
               <span class="chev">›</span>
             </summary>
             <div class="group-body">
-              <div class="toggle-grid">
+              <div class="toggle-grid moderation-grid">
                 <label class="toggle"><span>Hide deleted</span><input data-setting="hideDeleted" type="checkbox" /><span class="switch"></span></label>
                 <label class="toggle"><span>Hide bans/timeouts</span><input data-setting="hideBans" type="checkbox" /><span class="switch"></span></label>
                 <label class="toggle"><span>Ignore commands</span><input data-setting="ignoreCommands" type="checkbox" /><span class="switch"></span></label>
@@ -930,7 +1011,6 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
           <div class="panel-head">
             <div>
               <h2 class="panel-title">Preview Window</h2>
-              <p class="panel-note">Uses the same <span class="mini-kbd">overlay/overlay.html</span> file with <span class="mini-kbd">preview=1</span>.</p>
             </div>
             <div class="preview-actions">
               <div class="mode-toggle" aria-label="Preview or live source switch">
