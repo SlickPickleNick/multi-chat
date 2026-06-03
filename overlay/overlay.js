@@ -8,6 +8,7 @@ const defaults = {
   endpoint: '/',
   password: '',
   avatar: true,
+  avatarSize: 34,
   platformIcon: true,
   time: true,
   badges: true,
@@ -26,7 +27,7 @@ const defaults = {
   ffz: true,
   seventv: true,
   gifs: true,
-  gifModOnly: false,
+  gifModOnly: true,
   gifMaxWidth: 220,
   bttvUserId: '',
   ffzRoom: '',
@@ -70,6 +71,7 @@ const CONFIG = {
   fade: boolParam('fade', defaults.fade),
   overlayWidth: numberParam('overlayWidth', defaults.overlayWidth, 160, 1920),
   overlayHeight: numberParam('overlayHeight', defaults.overlayHeight, 120, 1080),
+  avatarSize: numberParam('avatarSize', defaults.avatarSize, 16, 96),
   maxMessages: numberParam('maxMessages', defaults.maxMessages, 1, 80),
   duration: numberParam('duration', defaults.duration, 0, 600),
   font: query.get('font') || defaults.font,
@@ -100,6 +102,7 @@ const CONFIG = {
 
 document.documentElement.style.setProperty('--overlay-width', `${CONFIG.overlayWidth}px`);
 document.documentElement.style.setProperty('--overlay-height', `${CONFIG.overlayHeight}px`);
+document.documentElement.style.setProperty('--avatar-size', `${CONFIG.avatarSize}px`);
 document.documentElement.style.setProperty('--font-size', `${CONFIG.fontSize}px`);
 document.documentElement.style.setProperty('--line-height', CONFIG.lineHeight);
 document.documentElement.style.setProperty('--message-gap', `${CONFIG.gap}px`);
@@ -126,6 +129,8 @@ let previewTimer = null;
 const EVENT_WISHLIST = {
   Twitch: [
     'ChatMessage',
+    'Announcement',
+    'SharedChatAnnouncement',
     'ChatMessageDeleted',
     'SharedChatMessageDeleted',
     'ChatCleared',
@@ -149,8 +154,8 @@ const EVENT_WISHLIST = {
 };
 
 const PREVIEW_USERS = [
-  { platform: 'twitch', name: 'PixelPickle', color: '#b195ff', mod: true },
-  { platform: 'twitch', name: 'RaidCaptain', color: '#71c7ff', shared: true },
+  { platform: 'twitch', name: 'PixelPickle', color: '#b195ff', mod: true, avatar: 'https://unavatar.io/twitch/pixelpickle' },
+  { platform: 'twitch', name: 'RaidCaptain', color: '#71c7ff', shared: true, avatar: 'https://unavatar.io/twitch/raidcaptain' },
   { platform: 'youtube', name: 'VODWatcher', color: '#ff6680' },
   { platform: 'youtube', name: 'ClipCollector', color: '#ffd36a', mod: true },
   { platform: 'kick', name: 'KickCrew', color: '#53fc18' },
@@ -167,17 +172,23 @@ const PREVIEW_MESSAGES = [
   'YouTube chat coming through clean',
   'Kick message in the same overlay',
   'Profile image fallback should show the user icon',
-  'Streamer.bot WebSocket is doing the bridge work'
+  'Streamer.bot WebSocket is doing the bridge work',
+  'Announcement test: chat, this one should be highlighted'
 ];
 
 const PLATFORM_ICON_URLS = {
-  twitch: 'https://cdn.simpleicons.org/twitch/FFFFFF',
-  youtube: 'https://cdn.simpleicons.org/youtube/FFFFFF',
-  kick: 'https://cdn.simpleicons.org/kick/FFFFFF'
+  twitch: 'https://cdn.simpleicons.org/twitch/9146FF',
+  youtube: 'https://cdn.simpleicons.org/youtube/FF0033',
+  kick: 'https://cdn.simpleicons.org/kick/53FC18'
 };
 
 const AVATAR_KEYS = [
   'profileImageUrl',
+  'imageUrl',
+  'userImageUrl',
+  'userImageURL',
+  'targetUserProfileImageUrl',
+  'targetUserProfileImageURL',
   'profileImageURL',
   'profile_image_url',
   'profileImage',
@@ -388,7 +399,7 @@ function sourceToPlatform(source) {
 }
 
 function isChatEvent(platform, type) {
-  if (platform === 'twitch') return type === 'ChatMessage';
+  if (platform === 'twitch') return type === 'ChatMessage' || type === 'Announcement' || type === 'SharedChatAnnouncement';
   if (platform === 'youtube') return type === 'Message';
   if (platform === 'kick') return type === 'ChatMessage';
   return false;
@@ -435,15 +446,18 @@ function normalizeMessage(platform, type, data) {
   const badges = Array.isArray(user.badges) ? user.badges : Array.isArray(data.badges) ? data.badges : [];
   const isShared = Boolean(data.isInSharedChat || data.isFromSharedChatGuest || data.sharedChatSource || data.source);
   const sharedSource = data.sharedChatSource || data.source || null;
+  const isAnnouncement = platform === 'twitch' && /announcement/i.test(String(type || ''));
+  const announcementColor = isAnnouncement ? normalizeAnnouncementColor(data.announcementColor) : null;
+  const avatarUrl = getAvatarUrl(user, data, platform, normalizedName);
 
   return {
     platform,
     type,
     id: messageId,
     userId,
-    username,
-    userColor: user.color || data.color || platformDefaultColor(platform),
-    avatarUrl: getAvatarUrl(user, data),
+    username: isAnnouncement && username === 'Unknown User' ? 'Announcement' : username,
+    userColor: user.color || data.color || (isAnnouncement ? announcementColor : '') || platformDefaultColor(platform),
+    avatarUrl,
     text: rawText,
     parts: Array.isArray(data.parts) ? data.parts : null,
     emotes: Array.isArray(data.emotes) ? data.emotes : [],
@@ -451,6 +465,8 @@ function normalizeMessage(platform, type, data) {
     isMod: isModerator(user, badges, data),
     isShared,
     sharedSource,
+    isAnnouncement,
+    announcementColor,
     timestamp: new Date()
   };
 }
@@ -464,7 +480,7 @@ function getMessageText(data) {
   return '';
 }
 
-function getAvatarUrl(user, data) {
+function getAvatarUrl(user, data, platform = '', normalizedName = '') {
   const likelyContainers = [
     user,
     data.user,
@@ -485,6 +501,10 @@ function getAvatarUrl(user, data) {
   for (const container of likelyContainers) {
     const nested = findNestedAvatarValue(container);
     if (nested) return nested;
+  }
+
+  if (platform === 'twitch' && normalizedName) {
+    return `https://unavatar.io/twitch/${encodeURIComponent(normalizedName)}`;
   }
 
   return '';
@@ -565,6 +585,34 @@ function isModerator(user, badges, data) {
   return badges.some((badge) => /moderator|broadcaster|owner|staff/i.test(`${badge.name || ''} ${badge.info || ''}`));
 }
 
+function normalizeAnnouncementColor(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  const map = {
+    blue: '#3ea6ff',
+    green: '#00db84',
+    orange: '#ff9f1c',
+    purple: '#9146ff',
+    primary: '#9146ff'
+  };
+  if (map[raw]) return map[raw];
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw)) return raw;
+  if (/^rgba?\(/i.test(raw)) return raw;
+  return '#9146ff';
+}
+
+function toRgba(color, alpha) {
+  const raw = String(color || '').trim();
+  if (/^rgba?\(/i.test(raw)) return raw;
+  let hex = raw.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map((char) => char + char).join('');
+  const intValue = Number.parseInt(hex, 16);
+  if (!Number.isFinite(intValue)) return `rgba(145, 70, 255, ${alpha})`;
+  const r = (intValue >> 16) & 255;
+  const g = (intValue >> 8) & 255;
+  const b = intValue & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function platformDefaultColor(platform) {
   if (platform === 'twitch') return '#b195ff';
   if (platform === 'youtube') return '#ff6680';
@@ -631,10 +679,17 @@ function removeNode(node, immediate = false) {
 
 function renderMessage(message) {
   const article = document.createElement('article');
-  article.className = `message ${message.platform}`;
+  article.className = `message ${message.platform}${CONFIG.avatar ? '' : ' no-avatar'}${message.isAnnouncement ? ' announcement' : ''}`;
   article.dataset.messageId = message.id;
   article.dataset.userId = message.userId || '';
   article.style.setProperty('--user-color', message.userColor || platformDefaultColor(message.platform));
+
+  if (message.isAnnouncement) {
+    const announcementColor = message.announcementColor || '#9146ff';
+    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.24));
+    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.72));
+    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.32));
+  }
 
   if (CONFIG.avatar) {
     article.appendChild(renderAvatar(message.avatarUrl, message.username));
@@ -687,6 +742,7 @@ function renderMeta(message) {
   meta.className = 'meta';
 
   if (CONFIG.platformIcon) meta.appendChild(platformIcon(message.platform));
+  if (message.isAnnouncement) meta.appendChild(announcementIcon());
 
   const username = document.createElement('span');
   username.className = 'username';
@@ -711,6 +767,17 @@ function renderMeta(message) {
   }
 
   return meta;
+}
+
+function announcementIcon() {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'announcement-icon';
+  wrapper.title = 'Twitch announcement';
+  wrapper.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6.2-1.8-2.15V9.2a5.22 5.22 0 0 0-4.1-5.1V3.4a1.1 1.1 0 1 0-2.2 0v.7a5.22 5.22 0 0 0-4.1 5.1v4.45L5 15.8a1.1 1.1 0 0 0 .84 1.8h12.32A1.1 1.1 0 0 0 19 15.8Z"/>
+    </svg>`;
+  return wrapper;
 }
 
 function platformIcon(platform) {
@@ -1002,14 +1069,16 @@ function randomPreviewMessage() {
   const availableUsers = PREVIEW_USERS.filter((user) => isPlatformEnabled(user.platform));
   const user = availableUsers[Math.floor(Math.random() * availableUsers.length)] || PREVIEW_USERS[0];
   const text = PREVIEW_MESSAGES[Math.floor(Math.random() * PREVIEW_MESSAGES.length)];
+  const isAnnouncement = user.platform === 'twitch' && /announcement test/i.test(text);
+  const announcementColor = isAnnouncement ? ['#9146ff', '#3ea6ff', '#00db84', '#ff9f1c'][Math.floor(Math.random() * 4)] : null;
   return {
     platform: user.platform,
-    type: user.platform === 'youtube' ? 'Message' : 'ChatMessage',
+    type: isAnnouncement ? 'Announcement' : user.platform === 'youtube' ? 'Message' : 'ChatMessage',
     id: `preview-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     userId: user.name,
     username: user.name,
-    userColor: user.color,
-    avatarUrl: '',
+    userColor: isAnnouncement ? announcementColor : user.color,
+    avatarUrl: user.avatar || '',
     text,
     parts: null,
     emotes: [],
@@ -1017,6 +1086,8 @@ function randomPreviewMessage() {
     isMod: Boolean(user.mod),
     isShared: Boolean(user.shared),
     sharedSource: user.shared ? { name: 'Shared Channel' } : null,
+    isAnnouncement,
+    announcementColor,
     timestamp: new Date()
   };
 }

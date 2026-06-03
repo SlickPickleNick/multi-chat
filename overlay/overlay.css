@@ -12,7 +12,11 @@
   --faint: rgba(255, 255, 255, 0.42);
   --overlay-width: 450px;
   --overlay-height: 1080px;
+  --avatar-size: 34px;
   --message-gap: 5px;
+  --announcement-bg: rgba(145, 70, 255, 0.25);
+  --announcement-border: rgba(145, 70, 255, 0.68);
+  --announcement-glow: rgba(145, 70, 255, 0.28);
   --font-size: 18px;
   --line-height: 1.28;
   --gif-max-width: 220px;
@@ -66,9 +70,9 @@ body.preview-mode {
 .message {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: var(--avatar-size) minmax(0, 1fr);
   align-items: start;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   padding: 1px 0;
   border: 0;
@@ -84,14 +88,30 @@ body.preview-mode {
 .message.twitch { --platform-color: #9146ff; }
 .message.youtube { --platform-color: #ff0033; }
 .message.kick { --platform-color: #53fc18; }
+.message.no-avatar { grid-template-columns: minmax(0, 1fr); }
+
+.message.announcement {
+  padding: 8px 10px;
+  border: 1px solid var(--announcement-border);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.58)),
+    rgba(10, 12, 20, 0.58);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.30),
+    0 0 24px var(--announcement-glow);
+  backdrop-filter: blur(10px);
+}
+
+.message.announcement .message-text { font-weight: 850; }
 
 .message.fading {
   animation: exitMessage 320ms ease-in both;
 }
 
 .avatar {
-  width: 22px;
-  height: 22px;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -133,31 +153,40 @@ body.preview-mode {
 }
 
 .platform-icon {
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
+  width: 18px;
+  height: 18px;
   display: inline-grid;
   place-items: center;
-  background: var(--platform-color, rgba(255, 255, 255, 0.16));
+  background: transparent;
   line-height: 1;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .platform-icon img,
 .platform-icon svg {
-  width: 68%;
-  height: 68%;
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: contain;
-  color: #fff;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
 }
 
-.platform-icon.youtube img,
-.platform-icon.youtube svg { width: 76%; height: 76%; }
-.platform-icon.kick img,
-.platform-icon.kick svg { width: 72%; height: 72%; }
+.announcement-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  transform: translateY(-1px);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
+}
+
+.announcement-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .username {
   color: var(--user-color, #ffffff);

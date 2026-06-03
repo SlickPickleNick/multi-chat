@@ -1,6 +1,6 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.5`
+Version: `v0.1.6`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
@@ -23,7 +23,9 @@ overlay/
 - Streamer.bot WebSocket connection without required Streamer.bot actions or chat triggers
 - Compact chat feed layout
 - Optional profile image display
+- Profile image size control, defaulting to `34px`
 - Fallback user icon when no profile image URL is available
+- Best-effort Twitch avatar lookup when Streamer.bot does not include a Twitch profile image URL
 - Actual platform logo images for Twitch, YouTube, and Kick indicators
 - Optional platform icon display
 - Optional 12-hour timestamp, such as `5:55 AM`
@@ -44,12 +46,13 @@ overlay/
 - 7TV channel emote support by Twitch user ID
 - Custom emote JSON map support
 - GIF link display support
-- GIF mod-only restriction option
+- GIF mod-only restriction option, enabled by default
 - Deleted message handling
 - Timeout/ban cleanup handling where platform event data is available
 - Ignored user/bot list
 - Ignore command messages option
 - Preview mode with random fake users/messages
+- Twitch announcement highlighting with a bell icon and announcement-color styling
 
 ## GitHub Pages setup
 
@@ -90,6 +93,8 @@ The overlay connects to the Streamer.bot WebSocket Server, requests the availabl
 Primary chat events used:
 
 - `Twitch.ChatMessage`
+- `Twitch.Announcement`
+- `Twitch.SharedChatAnnouncement`
 - `YouTube.Message`
 - `Kick.ChatMessage`
 
@@ -142,7 +147,7 @@ The message renderer replaces exact token matches with the matching emote image.
 
 ## GIF link support
 
-When GIF support is enabled, direct `.gif` links in chat are shown as inline GIF previews.
+When GIF support is enabled, direct `.gif` links in chat are shown as inline GIF previews. GIF mod-only mode is enabled by default in v0.1.6.
 
 When GIF mod-only mode is enabled, GIF previews only display for users detected as moderators, broadcasters, staff, or equivalent role/badge holders. Other GIF links display as hidden fallback text.
 
@@ -169,16 +174,29 @@ For small adjustments after the system is working, edit individual files:
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## Known limitations in v0.1.5
+## v0.1.6 changes
 
-- Profile images depend on whether Streamer.bot includes an image URL in the event payload.
+- Added chat width control to the dashboard.
+- Added chat height control to the dashboard.
+- Added profile image size control.
+- Increased default profile image size to `34px`.
+- Fixed the preview frame structure so it renders inside a true scaled `1920 × 1080` canvas.
+- Changed platform icons to plain logo images without colored bounding boxes.
+- Changed GIF mod-only mode to enabled by default.
+- Added Twitch announcement event subscriptions.
+- Added announcement bubble highlighting with a bell icon and announcement-color styling.
+- Added best-effort Twitch avatar lookup for cases where Streamer.bot does not provide a Twitch profile image URL.
+
+## Known limitations in v0.1.6
+
+- Profile images primarily depend on whether Streamer.bot includes an image URL in the event payload. Twitch profile images use a best-effort external fallback when the payload does not include one.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
 - Twitch native emotes require Streamer.bot to provide emote index/image data.
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
 - Style dropdowns are not included yet. This version is compact-feed only.
 
-## v0.1.5 structure note
+## v0.1.6 structure note
 
 The dashboard CSS and JavaScript are embedded directly in `index.html`.
 

@@ -448,6 +448,10 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 .preview-frame-wrap {
   min-height: 0;
   padding: 14px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
   background:
     linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%),
     linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%);
@@ -491,7 +495,9 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   letter-spacing: 0.12em;
 }
 
-iframe {
+#previewFrame {
+  position: absolute;
+  inset: 0 auto auto 0;
   width: 1920px;
   height: 1080px;
   border: 0;
@@ -565,7 +571,7 @@ iframe {
       <div class="top-actions">
         <span class="pill"><span class="dot preview"></span><strong>Preview</strong> mode enabled</span>
         <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.4</span>
+        <span class="pill">v0.1.6</span>
       </div>
     </header>
 
@@ -646,6 +652,19 @@ iframe {
             <div class="group-body">
               <div class="field-row">
                 <div class="field">
+                  <label for="overlayWidth">Chat width</label>
+                  <input id="overlayWidth" data-setting="overlayWidth" type="number" min="160" max="1920" step="10" />
+                  <div class="hint">Default: 450px.</div>
+                </div>
+                <div class="field">
+                  <label for="overlayHeight">Chat height</label>
+                  <input id="overlayHeight" data-setting="overlayHeight" type="number" min="120" max="1080" step="10" />
+                  <div class="hint">Default: 1080px.</div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
                   <label for="maxMessages">Max messages</label>
                   <input id="maxMessages" data-setting="maxMessages" type="number" min="1" max="80" step="1" />
                 </div>
@@ -675,6 +694,18 @@ iframe {
                 <div class="field">
                   <label for="gap">Message gap</label>
                   <input id="gap" data-setting="gap" type="number" min="0" max="20" step="1" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="avatarSize">Profile image size</label>
+                  <input id="avatarSize" data-setting="avatarSize" type="number" min="16" max="96" step="1" />
+                  <div class="hint">Default: 34px.</div>
+                </div>
+                <div class="field">
+                  <label>Platform logos</label>
+                  <div class="hint">Rendered as plain logo marks with no color container.</div>
                 </div>
               </div>
 
@@ -798,7 +829,10 @@ iframe {
             </div>
           </div>
           <div class="preview-frame-wrap">
-            <iframe id="previewFrame" title="Multichat overlay preview" allow="clipboard-read; clipboard-write"></iframe>
+            <div class="preview-stage" id="previewStage">
+              <iframe id="previewFrame" title="Multichat overlay preview" allow="clipboard-read; clipboard-write"></iframe>
+            </div>
+            <div class="preview-size-note" id="previewSizeNote">Preview uses a scaled 1920×1080 canvas.</div>
           </div>
         </div>
 
@@ -822,7 +856,7 @@ iframe {
     </section>
   </main>
   <script>
-const STORAGE_KEY = 'spn-multichat-settings-v013';
+const STORAGE_KEY = 'spn-multichat-settings-v016';
 
 const defaults = {
   baseUrl: new URL('overlay/overlay.html', window.location.href).href,
@@ -842,6 +876,7 @@ const defaults = {
   fadeAnimation: true,
   overlayWidth: '450',
   overlayHeight: '1080',
+  avatarSize: '34',
   maxMessages: '14',
   duration: '0',
   fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -853,7 +888,7 @@ const defaults = {
   emoteFFZ: true,
   emote7TV: true,
   gifLinks: true,
-  gifModOnly: false,
+  gifModOnly: true,
   gifMaxWidth: '220',
   bttvUserId: '',
   ffzRoom: '',
@@ -934,6 +969,7 @@ function buildUrl({ preview = false } = {}) {
   addParam(params, 'endpoint', settings.endpoint);
   addParam(params, 'password', settings.password);
   addParam(params, 'avatar', settings.showAvatar);
+  addParam(params, 'avatarSize', settings.avatarSize);
   addParam(params, 'platformIcon', settings.showPlatformIcon);
   addParam(params, 'time', settings.showTime);
   addParam(params, 'badges', settings.showBadges);
