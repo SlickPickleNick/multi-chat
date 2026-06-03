@@ -13,6 +13,8 @@ const defaults = {
   badges: true,
   sharedBadge: true,
   fade: true,
+  overlayWidth: 450,
+  overlayHeight: 1080,
   maxMessages: 14,
   duration: 0,
   font: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -66,6 +68,8 @@ const CONFIG = {
   badges: boolParam('badges', defaults.badges),
   sharedBadge: boolParam('sharedBadge', defaults.sharedBadge),
   fade: boolParam('fade', defaults.fade),
+  overlayWidth: numberParam('overlayWidth', defaults.overlayWidth, 160, 1920),
+  overlayHeight: numberParam('overlayHeight', defaults.overlayHeight, 120, 1080),
   maxMessages: numberParam('maxMessages', defaults.maxMessages, 1, 80),
   duration: numberParam('duration', defaults.duration, 0, 600),
   font: query.get('font') || defaults.font,
@@ -94,6 +98,8 @@ const CONFIG = {
   debug: boolParam('debug', defaults.debug)
 };
 
+document.documentElement.style.setProperty('--overlay-width', `${CONFIG.overlayWidth}px`);
+document.documentElement.style.setProperty('--overlay-height', `${CONFIG.overlayHeight}px`);
 document.documentElement.style.setProperty('--font-size', `${CONFIG.fontSize}px`);
 document.documentElement.style.setProperty('--line-height', CONFIG.lineHeight);
 document.documentElement.style.setProperty('--message-gap', `${CONFIG.gap}px`);
@@ -163,6 +169,34 @@ const PREVIEW_MESSAGES = [
   'Profile image fallback should show the user icon',
   'Streamer.bot WebSocket is doing the bridge work'
 ];
+
+const PLATFORM_ICON_URLS = {
+  twitch: 'https://cdn.simpleicons.org/twitch/FFFFFF',
+  youtube: 'https://cdn.simpleicons.org/youtube/FFFFFF',
+  kick: 'https://cdn.simpleicons.org/kick/FFFFFF'
+};
+
+const AVATAR_KEYS = [
+  'profileImageUrl',
+  'profileImageURL',
+  'profile_image_url',
+  'profileImage',
+  'avatarUrl',
+  'avatarURL',
+  'avatar_url',
+  'avatar',
+  'userProfileImageUrl',
+  'userProfileImage',
+  'photoUrl',
+  'photoURL',
+  'photo',
+  'pictureUrl',
+  'pictureURL',
+  'picture',
+  'thumbnailUrl',
+  'thumbnail'
+];
+
 
 function normalizeName(value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase();
@@ -431,17 +465,97 @@ function getMessageText(data) {
 }
 
 function getAvatarUrl(user, data) {
-  return (
-    user.profileImageUrl ||
-    user.profileImage ||
-    user.avatarUrl ||
-    user.avatar ||
-    user.imageUrl ||
-    data.profileImageUrl ||
-    data.avatarUrl ||
-    data.userProfileImageUrl ||
-    ''
-  );
+  const likelyContainers = [
+    user,
+    data.user,
+    data.author,
+    data.sender,
+    data.chatter,
+    data.message?.user,
+    data.message?.author,
+    data.event?.user,
+    data
+  ].filter(Boolean);
+
+  for (const container of likelyContainers) {
+    const direct = findDirectAvatarValue(container);
+    if (direct) return direct;
+  }
+
+  for (const container of likelyContainers) {
+    const nested = findNestedAvatarValue(container);
+    if (nested) return nested;
+  }
+
+  return '';
+}
+
+function findDirectAvatarValue(container) {
+  if (!container || typeof container !== 'object') return '';
+  for (const key of AVATAR_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(container, key)) {
+      const value = normalizeAvatarValue(container[key]);
+      if (value) return value;
+    }
+  }
+  return '';
+}
+
+function findNestedAvatarValue(value, depth = 0, seen = new WeakSet()) {
+  if (!value || typeof value !== 'object' || depth > 4 || seen.has(value)) return '';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findNestedAvatarValue(item, depth + 1, seen);
+      if (found) return found;
+    }
+    return '';
+  }
+
+  for (const [key, candidate] of Object.entries(value)) {
+    const keyText = key.toLowerCase();
+    if (/(avatar|profile.*image|profileimage|user.*image|photo|picture|thumbnail)/i.test(keyText)) {
+      const normalized = normalizeAvatarValue(candidate);
+      if (normalized) return normalized;
+    }
+  }
+
+  for (const candidate of Object.values(value)) {
+    const found = findNestedAvatarValue(candidate, depth + 1, seen);
+    if (found) return found;
+  }
+
+  return '';
+}
+
+function normalizeAvatarValue(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return isHttpImageishUrl(value) ? value : '';
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = normalizeAvatarValue(item);
+      if (normalized) return normalized;
+    }
+    return '';
+  }
+  if (typeof value === 'object') {
+    const keys = ['url', 'src', 'href', 'uri', 'link'];
+    for (const key of keys) {
+      const normalized = normalizeAvatarValue(value[key]);
+      if (normalized) return normalized;
+    }
+  }
+  return '';
+}
+
+function isHttpImageishUrl(value) {
+  try {
+    const url = new URL(value);
+    return /^https?:$/.test(url.protocol);
+  } catch {
+    return false;
+  }
 }
 
 function isModerator(user, badges, data) {
@@ -601,10 +715,40 @@ function renderMeta(message) {
 
 function platformIcon(platform) {
   const icon = document.createElement('span');
-  icon.className = 'platform-icon';
-  icon.title = platform;
-  icon.textContent = platform === 'twitch' ? 'T' : platform === 'youtube' ? 'Y' : 'K';
+  icon.className = `platform-icon ${platform}`;
+  icon.title = platformLabel(platform);
+
+  const img = document.createElement('img');
+  img.src = PLATFORM_ICON_URLS[platform] || '';
+  img.alt = '';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+  img.onerror = () => {
+    img.remove();
+    icon.appendChild(fallbackPlatformMark(platform));
+  };
+  icon.appendChild(img);
   return icon;
+}
+
+function platformLabel(platform) {
+  if (platform === 'twitch') return 'Twitch';
+  if (platform === 'youtube') return 'YouTube';
+  if (platform === 'kick') return 'Kick';
+  return 'Platform';
+}
+
+function fallbackPlatformMark(platform) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'platform-fallback-mark';
+  if (platform === 'youtube') {
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.9 12l-6.3 3.6Z"/></svg>';
+  } else if (platform === 'twitch') {
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.6 4.7h1.7v5.1h-1.7Zm4.7 0H18v5.1h-1.7ZM6 0 1.7 4.3v15.4h5.1V24l4.3-4.3h3.4L22.3 12V0Zm14.6 11.1-3.4 3.4h-3.4l-3 3v-3H6.9V1.7h13.7Z"/></svg>';
+  } else {
+    wrapper.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 3h6.6v5.2h2.1L16.8 3H24l-6.3 7.8L24 21h-7.5l-3.9-6.4h-2V21H4Z"/></svg>';
+  }
+  return wrapper.firstElementChild;
 }
 
 function renderBadges(badges, container) {

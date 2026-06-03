@@ -1,32 +1,39 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.2`
+Version: `v0.1.5`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
-This version uses separate HTML, CSS, and JavaScript files:
+This version keeps the dashboard self-contained for easier editing while keeping the OBS overlay split into separate files.
 
-- `index.html` — customization dashboard and OBS URL generator
-- `dashboard.css` — dashboard styling
-- `dashboard.js` — dashboard controls, settings, preview, and URL generation
-- `README.md` — setup and reference notes
-- `overlay/overlay.html` — OBS browser-source overlay
-- `overlay/overlay.css` — OBS overlay styling
-- `overlay/overlay.js` — WebSocket connection, message parsing, emotes, GIFs, and rendering
+## File structure
+
+```text
+index.html
+README.md
+overlay/
+  overlay.html
+  overlay.css
+  overlay.js
+```
 
 ## Current feature set
 
 - Twitch, YouTube, and Kick platform toggles
-- Streamer.bot WebSocket connection without required actions or triggers
+- Streamer.bot WebSocket connection without required Streamer.bot actions or chat triggers
 - Compact chat feed layout
 - Optional profile image display
 - Fallback user icon when no profile image URL is available
-- Optional platform icon
+- Actual platform logo images for Twitch, YouTube, and Kick indicators
+- Optional platform icon display
 - Optional 12-hour timestamp, such as `5:55 AM`
 - Optional user badges
 - Twitch Shared Chat badge support
 - Optional message fade duration
 - Max message count control
+- Overlay width and height controls
+- Default overlay size: `450 × 1080`
+- Dashboard preview that simulates a scaled `1920 × 1080` stream canvas
 - Font family, font size, line height, and message gap controls
 - Twitch native emote rendering when Streamer.bot provides emote data
 - BTTV global emote support
@@ -46,7 +53,7 @@ This version uses separate HTML, CSS, and JavaScript files:
 
 ## GitHub Pages setup
 
-1. Upload `index.html`, `dashboard.css`, `dashboard.js`, `README.md`, and the `overlay` folder to the GitHub repository.
+1. Upload `index.html`, `README.md`, and the `overlay` folder to the GitHub repository.
 2. Enable GitHub Pages for the repository.
 3. Open the published `index.html` page in a browser.
 4. Adjust the controls in the customization dashboard.
@@ -57,8 +64,8 @@ This version uses separate HTML, CSS, and JavaScript files:
 
 Recommended OBS starting size:
 
-- Width: `900`
-- Height: `500`
+- Width: `450`
+- Height: `1080`
 
 The overlay background is transparent unless preview mode is enabled.
 
@@ -156,15 +163,13 @@ For broad changes, update the zip package.
 
 For small adjustments after the system is working, edit individual files:
 
-- Dashboard structure/control fields: `index.html`
-- Dashboard styling: `dashboard.css`
-- Dashboard settings, preview, and URL generation: `dashboard.js`
+- Dashboard structure, styling, settings, preview, and URL generation: `index.html`
 - OBS overlay structure: `overlay/overlay.html`
 - OBS overlay styling: `overlay/overlay.css`
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## Known limitations in v0.1.2
+## Known limitations in v0.1.5
 
 - Profile images depend on whether Streamer.bot includes an image URL in the event payload.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
@@ -172,3 +177,27 @@ For small adjustments after the system is working, edit individual files:
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
 - Style dropdowns are not included yet. This version is compact-feed only.
+
+## v0.1.5 structure note
+
+The dashboard CSS and JavaScript are embedded directly in `index.html`.
+
+The OBS overlay remains separated into:
+
+```text
+overlay/overlay.html
+overlay/overlay.css
+overlay/overlay.js
+```
+
+Live GitHub Pages files required for this version:
+
+```text
+index.html
+overlay/
+  overlay.html
+  overlay.css
+  overlay.js
+```
+
+`README.md` is documentation only and is not required for the live overlay to run.

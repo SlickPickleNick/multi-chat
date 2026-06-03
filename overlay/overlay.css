@@ -10,7 +10,9 @@
   --text: rgba(255, 255, 255, 0.96);
   --muted: rgba(255, 255, 255, 0.64);
   --faint: rgba(255, 255, 255, 0.42);
-  --message-gap: 6px;
+  --overlay-width: 450px;
+  --overlay-height: 1080px;
+  --message-gap: 5px;
   --font-size: 18px;
   --line-height: 1.28;
   --gif-max-width: 220px;
@@ -42,14 +44,18 @@ body.preview-mode {
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: end;
+  justify-items: start;
   pointer-events: none;
-  padding: 18px;
+  padding: 0;
 }
 
 #chatFeed {
   align-self: end;
-  width: min(100%, 980px);
+  justify-self: start;
+  width: min(var(--overlay-width), 100vw);
+  height: min(var(--overlay-height), 100vh);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -62,25 +68,17 @@ body.preview-mode {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 5px 8px;
-  border: 1px solid var(--line-soft);
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(10, 12, 20, 0.68), rgba(10, 12, 20, 0.42));
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(14px);
-  animation: enterMessage 180ms ease-out both;
-  overflow: hidden;
-}
-
-.message::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--platform-color, var(--accent));
-  opacity: 0.9;
+  padding: 1px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: enterMessage 160ms ease-out both;
+  overflow: visible;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.74), 0 0 18px rgba(0, 0, 0, 0.44);
 }
 
 .message.twitch { --platform-color: #9146ff; }
@@ -88,22 +86,22 @@ body.preview-mode {
 .message.kick { --platform-color: #53fc18; }
 
 .message.fading {
-  animation: exitMessage 360ms ease-in both;
+  animation: exitMessage 320ms ease-in both;
 }
 
 .avatar {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(8, 10, 18, 0.72);
   display: grid;
   place-items: center;
-  margin-left: 2px;
-  margin-top: 1px;
-  color: rgba(255, 255, 255, 0.62);
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.68);
   flex: 0 0 auto;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.34);
 }
 
 .avatar img,
@@ -128,31 +126,42 @@ body.preview-mode {
 .meta {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   margin-right: 5px;
   vertical-align: baseline;
   white-space: nowrap;
 }
 
 .platform-icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   border-radius: 5px;
   display: inline-grid;
   place-items: center;
-  color: white;
-  background: var(--platform-color, rgba(255, 255, 255, 0.18));
-  font-size: 9px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
+  background: var(--platform-color, rgba(255, 255, 255, 0.16));
   line-height: 1;
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
 }
+
+.platform-icon img,
+.platform-icon svg {
+  width: 68%;
+  height: 68%;
+  display: block;
+  object-fit: contain;
+  color: #fff;
+}
+
+.platform-icon.youtube img,
+.platform-icon.youtube svg { width: 76%; height: 76%; }
+.platform-icon.kick img,
+.platform-icon.kick svg { width: 72%; height: 72%; }
 
 .username {
   color: var(--user-color, #ffffff);
   font-weight: 950;
-  text-shadow: 0 0 16px rgba(0, 0, 0, 0.35);
   white-space: nowrap;
 }
 
@@ -168,17 +177,18 @@ body.preview-mode {
 .time {
   display: inline-flex;
   align-items: center;
-  min-height: 16px;
-  padding: 1px 5px;
+  min-height: 15px;
+  padding: 0 4px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.22);
   color: var(--muted);
-  font-size: 0.62em;
+  font-size: 0.58em;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   vertical-align: 2px;
+  text-shadow: none;
 }
 
 .shared-badge {
@@ -189,8 +199,8 @@ body.preview-mode {
 
 .message-text {
   display: inline;
-  color: rgba(255, 255, 255, 0.93);
-  font-weight: 650;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
 }
 
 .emote {
@@ -200,6 +210,7 @@ body.preview-mode {
   object-fit: contain;
   vertical-align: -0.25em;
   margin: 0 0.06em;
+  filter: drop-shadow(0 2px 7px rgba(0, 0, 0, 0.5));
 }
 
 .gif-preview {
@@ -208,10 +219,11 @@ body.preview-mode {
   max-width: var(--gif-max-width);
   max-height: 140px;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   margin-top: 5px;
   background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
 }
 
 .link-fallback {
@@ -255,11 +267,11 @@ body.preview-mode {
 .system-status.preview .dot { background: #78a8ff; }
 
 @keyframes enterMessage {
-  from { opacity: 0; transform: translateY(10px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes exitMessage {
   from { opacity: 1; transform: translateY(0); max-height: 220px; }
-  to { opacity: 0; transform: translateY(-6px); max-height: 0; margin-top: calc(var(--message-gap) * -1); padding-top: 0; padding-bottom: 0; border-width: 0; }
+  to { opacity: 0; transform: translateY(-4px); max-height: 0; margin-top: calc(var(--message-gap) * -1); padding-top: 0; padding-bottom: 0; }
 }
