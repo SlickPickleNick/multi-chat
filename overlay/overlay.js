@@ -744,6 +744,7 @@ function renderMessage(message) {
   article.className = `message ${message.platform}${showAvatar ? '' : ' no-avatar'}${message.isAnnouncement ? ' announcement' : ''}`;
   article.dataset.messageId = message.id;
   article.dataset.userId = message.userId || '';
+  article.dataset.announcement = message.isAnnouncement ? 'true' : 'false';
   article.style.setProperty('--user-color', message.userColor || platformDefaultColor(message.platform));
 
   if (message.isAnnouncement) {

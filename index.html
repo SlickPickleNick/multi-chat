@@ -528,8 +528,11 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 }
 
 .preview-stage.zoomed {
-  justify-self: start;
+  justify-self: stretch;
   align-self: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .preview-stage::before {
@@ -552,7 +555,8 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 
 #previewFrame {
   position: absolute;
-  inset: 0 auto auto 0;
+  left: 0;
+  top: 0;
   width: 1920px;
   height: 1080px;
   border: 0;
@@ -561,6 +565,12 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   transform: scale(var(--preview-scale));
   transform-origin: top left;
   pointer-events: none;
+}
+
+.preview-stage.zoomed #previewFrame {
+  top: auto;
+  bottom: 0;
+  transform-origin: bottom left;
 }
 
 .url-panel {
@@ -1234,29 +1244,32 @@ function injectRandom() {
 function resizePreviewStage() {
   const stage = $('#previewStage');
   const wrap = stage?.parentElement;
+  const note = $('#previewSizeNote');
   if (!stage || !wrap) return;
 
-  const availableWidth = Math.max(1, wrap.clientWidth);
-  const availableHeight = Math.max(1, wrap.clientHeight - 34);
-  const overlayWidth = Number(settings.overlayWidth) || Number(defaults.overlayWidth);
-  const padding = Number(settings.overlayPaddingLeft) || 0;
+  const wrapStyles = getComputedStyle(wrap);
+  const padX = (parseFloat(wrapStyles.paddingLeft) || 0) + (parseFloat(wrapStyles.paddingRight) || 0);
+  const padY = (parseFloat(wrapStyles.paddingTop) || 0) + (parseFloat(wrapStyles.paddingBottom) || 0);
+  const rowGap = parseFloat(wrapStyles.rowGap || wrapStyles.gap) || 0;
+  const noteHeight = note ? note.getBoundingClientRect().height : 0;
+  const availableWidth = Math.max(1, wrap.clientWidth - padX);
+  const availableHeight = Math.max(1, wrap.clientHeight - padY - noteHeight - rowGap);
 
   stage.classList.toggle('scaled', previewView === 'scaled');
   stage.classList.toggle('zoomed', previewView === 'zoomed');
 
   if (previewView === 'scaled') {
-    const width = Math.min(availableWidth, availableHeight * (16 / 9));
-    const height = width * (9 / 16);
-    const scale = width / 1920;
+    const scale = Math.min(availableWidth / 1920, availableHeight / 1080);
+    const width = Math.floor(1920 * scale);
+    const height = Math.floor(1080 * scale);
     stage.style.width = `${Math.max(1, width)}px`;
     stage.style.height = `${Math.max(1, height)}px`;
     stage.style.setProperty('--preview-scale', String(scale));
     return;
   }
 
-  const zoomWidth = Math.min(availableWidth, Math.max(420, overlayWidth + padding + 92));
-  stage.style.width = `${zoomWidth}px`;
-  stage.style.height = `${Math.max(420, availableHeight)}px`;
+  stage.style.width = `${availableWidth}px`;
+  stage.style.height = `${availableHeight}px`;
   stage.style.setProperty('--preview-scale', '1');
 }
 
