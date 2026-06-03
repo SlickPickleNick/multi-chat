@@ -748,9 +748,10 @@ function renderMessage(message) {
 
   if (message.isAnnouncement) {
     const announcementColor = message.announcementColor || '#9146ff';
-    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.46));
-    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.92));
-    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.52));
+    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.66));
+    article.style.setProperty('--announcement-bg-soft', toRgba(announcementColor, 0.28));
+    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.98));
+    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.72));
   }
 
   if (showAvatar) {
@@ -807,12 +808,12 @@ function renderMeta(message) {
   if (CONFIG.platformIcon) meta.appendChild(platformIcon(message.platform));
   if (message.isAnnouncement) meta.appendChild(announcementIcon());
 
-  if (!bare) {
-    const username = document.createElement('span');
-    username.className = 'username';
-    username.textContent = message.username;
-    meta.appendChild(username);
+  const username = document.createElement('span');
+  username.className = 'username';
+  username.textContent = message.username;
+  meta.appendChild(username);
 
+  if (!bare) {
     if (CONFIG.badges) renderBadges(message.badges, meta);
 
     if (CONFIG.sharedBadge && message.isShared) {

@@ -16,9 +16,9 @@
   --avatar-size: 34px;
   --message-text-shadow: 0 2px 10px rgba(0, 0, 0, 0.74), 0 0 18px rgba(0, 0, 0, 0.44);
   --message-gap: 5px;
-  --announcement-bg: rgba(145, 70, 255, 0.46);
-  --announcement-border: rgba(145, 70, 255, 0.92);
-  --announcement-glow: rgba(145, 70, 255, 0.48);
+  --announcement-bg: rgba(145, 70, 255, 0.64);
+  --announcement-border: rgba(170, 126, 255, 0.98);
+  --announcement-glow: rgba(145, 70, 255, 0.70);
   --font-size: 18px;
   --line-height: 1.28;
   --gif-max-width: 220px;
@@ -107,7 +107,11 @@ body.style-bare .avatar { display: none; }
 
 body.style-bare .meta {
   margin-right: 5px;
-  gap: 3px;
+  gap: 4px;
+}
+
+body.style-bare .username {
+  font-weight: 950;
 }
 
 body.style-bubbles .message {
@@ -150,11 +154,12 @@ body.style-bubbles .message.announcement {
 body.style-bubbles .message.announcement .body {
   border-color: var(--announcement-border);
   background:
-    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.34)),
-    rgba(10, 12, 20, 0.44);
+    linear-gradient(90deg, var(--announcement-bg), var(--announcement-bg-soft, rgba(145, 70, 255, 0.24))),
+    rgba(10, 12, 20, 0.38);
   box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     0 10px 30px rgba(0, 0, 0, 0.30),
-    0 0 28px var(--announcement-glow);
+    0 0 34px var(--announcement-glow);
 }
 
 .message.announcement {
@@ -162,12 +167,24 @@ body.style-bubbles .message.announcement .body {
   border: 1px solid var(--announcement-border);
   border-radius: 16px;
   background:
-    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.32)),
+    linear-gradient(90deg, var(--announcement-bg), var(--announcement-bg-soft, rgba(145, 70, 255, 0.24))),
+    rgba(10, 12, 20, 0.38);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(0, 0, 0, 0.30),
+    0 0 34px var(--announcement-glow);
+  backdrop-filter: blur(10px);
+}
+
+body.style-cards .message.announcement {
+  border-color: var(--announcement-border);
+  background:
+    linear-gradient(90deg, var(--announcement-bg), var(--announcement-bg-soft, rgba(145, 70, 255, 0.24))),
     rgba(10, 12, 20, 0.42);
   box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.30),
-    0 0 24px var(--announcement-glow);
-  backdrop-filter: blur(10px);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 34px rgba(0, 0, 0, 0.32),
+    0 0 36px var(--announcement-glow);
 }
 
 .message.announcement .message-text { font-weight: 850; }

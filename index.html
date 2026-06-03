@@ -484,7 +484,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   align-items: stretch;
-  justify-items: start;
+  justify-items: stretch;
   gap: 10px;
   overflow: hidden;
   background:
@@ -504,9 +504,9 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 .preview-stage {
   --preview-scale: 1;
   position: relative;
-  width: min(100%, 560px);
+  width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 360px;
   max-width: 100%;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -528,7 +528,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 }
 
 .preview-stage.zoomed {
-  justify-self: start;
+  justify-self: stretch;
   align-self: stretch;
 }
 
@@ -552,7 +552,8 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 
 #previewFrame {
   position: absolute;
-  inset: 0 auto auto 0;
+  left: 0;
+  top: 0;
   width: 1920px;
   height: 1080px;
   border: 0;
@@ -561,6 +562,13 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   transform: scale(var(--preview-scale));
   transform-origin: top left;
   pointer-events: none;
+}
+
+.preview-stage.zoomed #previewFrame {
+  top: auto;
+  bottom: 0;
+  transform: scale(1);
+  transform-origin: bottom left;
 }
 
 .url-panel {
@@ -658,7 +666,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
       <div class="top-actions">
         <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
         <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.8</span>
+        <span class="pill">v0.1.9</span>
       </div>
     </header>
 
@@ -971,7 +979,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
     </section>
   </main>
   <script>
-const STORAGE_KEY = 'spn-multichat-settings-v018';
+const STORAGE_KEY = 'spn-multichat-settings-v019';
 
 const defaults = {
   baseUrl: new URL('overlay/overlay.html', window.location.href).href,
@@ -1225,22 +1233,32 @@ function injectRandom() {
 }
 
 
+function getPreviewAvailableSize(wrap, note) {
+  const wrapStyle = window.getComputedStyle(wrap);
+  const paddingX = parseFloat(wrapStyle.paddingLeft || '0') + parseFloat(wrapStyle.paddingRight || '0');
+  const paddingY = parseFloat(wrapStyle.paddingTop || '0') + parseFloat(wrapStyle.paddingBottom || '0');
+  const gap = parseFloat(wrapStyle.rowGap || wrapStyle.gap || '0') || 0;
+  const noteHeight = note ? note.getBoundingClientRect().height : 0;
+  return {
+    width: Math.max(1, wrap.clientWidth - paddingX),
+    height: Math.max(1, wrap.clientHeight - paddingY - noteHeight - gap)
+  };
+}
+
 function resizePreviewStage() {
   const stage = $('#previewStage');
   const wrap = stage?.parentElement;
+  const note = $('#previewSizeNote');
   if (!stage || !wrap) return;
 
-  const availableWidth = Math.max(1, wrap.clientWidth);
-  const availableHeight = Math.max(1, wrap.clientHeight - 34);
-  const overlayWidth = Number(settings.overlayWidth) || Number(defaults.overlayWidth);
-  const padding = Number(settings.overlayPaddingLeft) || 0;
+  const { width: availableWidth, height: availableHeight } = getPreviewAvailableSize(wrap, note);
 
   stage.classList.toggle('scaled', previewView === 'scaled');
   stage.classList.toggle('zoomed', previewView === 'zoomed');
 
   if (previewView === 'scaled') {
-    const width = Math.min(availableWidth, availableHeight * (16 / 9));
-    const height = width * (9 / 16);
+    const width = Math.floor(Math.min(availableWidth, availableHeight * (16 / 9)));
+    const height = Math.floor(width * (9 / 16));
     const scale = width / 1920;
     stage.style.width = `${Math.max(1, width)}px`;
     stage.style.height = `${Math.max(1, height)}px`;
@@ -1248,9 +1266,8 @@ function resizePreviewStage() {
     return;
   }
 
-  const zoomWidth = Math.min(availableWidth, Math.max(420, overlayWidth + padding + 92));
-  stage.style.width = `${zoomWidth}px`;
-  stage.style.height = `${Math.max(420, availableHeight)}px`;
+  stage.style.width = `${Math.max(1, Math.floor(availableWidth))}px`;
+  stage.style.height = `${Math.max(360, Math.floor(availableHeight))}px`;
   stage.style.setProperty('--preview-scale', '1');
 }
 
@@ -1264,7 +1281,7 @@ function updatePreviewDimensions() {
   if (previewView === 'scaled') {
     note.textContent = `Scaled view shows the full 1920×1080 OBS canvas. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px. Style: ${style}.`;
   } else {
-    note.textContent = `Zoomed view clips into the chat area at 1:1 scale for editing. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px. Style: ${style}.`;
+    note.textContent = `Zoomed view fills the preview panel and locks to the bottom-left chat area at 1:1 scale. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px. Style: ${style}.`;
   }
 }
 
