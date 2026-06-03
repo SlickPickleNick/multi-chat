@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SlickPickleNick Multichat Overlay Controls</title>
+  <link rel="stylesheet" href="./dashboard.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">SPN</div>
+        <div>
+          <h1>Multichat Overlay</h1>
+          <div class="subtitle">Compact OBS chat feed for Twitch, YouTube, and Kick through Streamer.bot WebSocket.</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="pill"><span class="dot preview"></span><strong>Preview</strong> mode enabled</span>
+        <span class="pill">GitHub Pages ready</span>
+        <span class="pill">v0.1.2</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <aside class="panel controls-panel" aria-label="Overlay controls">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">Control Deck</h2>
+            <p class="panel-note">Adjust the overlay URL, preview, platform support, chat display, emotes, GIFs, and filtering.</p>
+          </div>
+        </div>
+
+        <div class="control-stack">
+          <details class="control-group" open>
+            <summary>
+              <span class="summary-text"><strong>Connection</strong><span>Streamer.bot WebSocket and generated overlay path.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="field">
+                <label for="baseUrl">Overlay base URL</label>
+                <input id="baseUrl" data-setting="baseUrl" type="text" />
+                <div class="hint">For GitHub Pages, use the published <span class="mini-kbd">overlay/overlay.html</span> URL. This defaults to the local sibling file.</div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="scheme">Scheme</label>
+                  <select id="scheme" data-setting="scheme">
+                    <option value="ws">ws</option>
+                    <option value="wss">wss</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="host">Host</label>
+                  <input id="host" data-setting="host" type="text" placeholder="127.0.0.1" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="port">Port</label>
+                  <input id="port" data-setting="port" type="number" min="1" max="65535" step="1" />
+                </div>
+                <div class="field">
+                  <label for="endpoint">Endpoint</label>
+                  <input id="endpoint" data-setting="endpoint" type="text" placeholder="/" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="password">WebSocket password</label>
+                <input id="password" data-setting="password" type="password" autocomplete="off" placeholder="Optional" />
+                <div class="hint">Only needed when Streamer.bot WebSocket authentication is enabled. It will be included in the generated OBS URL.</div>
+              </div>
+            </div>
+          </details>
+
+          <details class="control-group" open>
+            <summary>
+              <span class="summary-text"><strong>Platforms</strong><span>Choose which message sources appear in the feed.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="toggle-grid">
+                <label class="toggle"><span>Twitch</span><input data-setting="platformTwitch" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>YouTube</span><input data-setting="platformYoutube" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Kick</span><input data-setting="platformKick" type="checkbox" /><span class="switch"></span></label>
+              </div>
+            </div>
+          </details>
+
+          <details class="control-group" open>
+            <summary>
+              <span class="summary-text"><strong>Compact Feed</strong><span>Control visibility, font, spacing, and message lifetime.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="field-row">
+                <div class="field">
+                  <label for="maxMessages">Max messages</label>
+                  <input id="maxMessages" data-setting="maxMessages" type="number" min="1" max="80" step="1" />
+                </div>
+                <div class="field">
+                  <label for="duration">Message duration</label>
+                  <input id="duration" data-setting="duration" type="number" min="0" max="600" step="1" />
+                  <div class="hint">0 = stay until pushed out.</div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="fontFamily">Font family</label>
+                  <input id="fontFamily" data-setting="fontFamily" type="text" />
+                </div>
+                <div class="field">
+                  <label for="fontSize">Font size</label>
+                  <input id="fontSize" data-setting="fontSize" type="number" min="10" max="42" step="1" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="lineHeight">Line height</label>
+                  <input id="lineHeight" data-setting="lineHeight" type="number" min="1" max="2" step="0.05" />
+                </div>
+                <div class="field">
+                  <label for="gap">Message gap</label>
+                  <input id="gap" data-setting="gap" type="number" min="0" max="20" step="1" />
+                </div>
+              </div>
+
+              <div class="toggle-grid">
+                <label class="toggle"><span>Profile image</span><input data-setting="showAvatar" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Platform icon</span><input data-setting="showPlatformIcon" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>12-hour time</span><input data-setting="showTime" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>User badges</span><input data-setting="showBadges" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Shared chat badge</span><input data-setting="showSharedBadge" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Fade animation</span><input data-setting="fadeAnimation" type="checkbox" /><span class="switch"></span></label>
+              </div>
+            </div>
+          </details>
+
+          <details class="control-group">
+            <summary>
+              <span class="summary-text"><strong>Emotes & GIFs</strong><span>Twitch native emotes, BTTV, FFZ, 7TV, and GIF links.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="toggle-grid">
+                <label class="toggle"><span>Twitch native</span><input data-setting="emoteNative" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>BTTV</span><input data-setting="emoteBTTV" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>FFZ</span><input data-setting="emoteFFZ" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>7TV</span><input data-setting="emote7TV" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>GIF links</span><input data-setting="gifLinks" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>GIFs mod-only</span><input data-setting="gifModOnly" type="checkbox" /><span class="switch"></span></label>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="bttvUserId">BTTV Twitch user ID</label>
+                  <input id="bttvUserId" data-setting="bttvUserId" type="text" placeholder="Optional" />
+                </div>
+                <div class="field">
+                  <label for="ffzRoom">FFZ room/channel</label>
+                  <input id="ffzRoom" data-setting="ffzRoom" type="text" placeholder="Optional" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="seventvTwitchId">7TV Twitch user ID</label>
+                  <input id="seventvTwitchId" data-setting="seventvTwitchId" type="text" placeholder="Optional" />
+                </div>
+                <div class="field">
+                  <label for="gifMaxWidth">GIF max width</label>
+                  <input id="gifMaxWidth" data-setting="gifMaxWidth" type="number" min="80" max="500" step="10" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="customEmotes">Custom emote map</label>
+                <textarea id="customEmotes" data-setting="customEmotes" spellcheck="false" placeholder='{"PickleHype":"https://example.com/emote.webp"}'></textarea>
+                <div class="hint">Optional JSON map. This keeps future preset/sample emotes easy to add without changing the renderer.</div>
+              </div>
+            </div>
+          </details>
+
+          <details class="control-group">
+            <summary>
+              <span class="summary-text"><strong>Moderation & Filtering</strong><span>Hide removed messages, ignored users, commands, and internal test events.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="toggle-grid">
+                <label class="toggle"><span>Hide deleted</span><input data-setting="hideDeleted" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Hide bans/timeouts</span><input data-setting="hideBans" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Ignore commands</span><input data-setting="ignoreCommands" type="checkbox" /><span class="switch"></span></label>
+                <label class="toggle"><span>Ignore tests/internal</span><input data-setting="ignoreInternal" type="checkbox" /><span class="switch"></span></label>
+              </div>
+
+              <div class="field">
+                <label for="ignoredUsers">Ignored users / bots</label>
+                <input id="ignoredUsers" data-setting="ignoredUsers" type="text" />
+                <div class="hint">Comma-separated. Common bot accounts are included by default and can be edited here.</div>
+              </div>
+            </div>
+          </details>
+
+          <details class="control-group">
+            <summary>
+              <span class="summary-text"><strong>Preview Mode</strong><span>Generate fake Twitch, YouTube, and Kick messages.</span></span>
+              <span class="chev">›</span>
+            </summary>
+            <div class="group-body">
+              <div class="field-row">
+                <div class="field">
+                  <label for="previewRate">Preview rate</label>
+                  <input id="previewRate" data-setting="previewRate" type="number" min="400" max="10000" step="100" />
+                  <div class="hint">Milliseconds between generated messages.</div>
+                </div>
+                <div class="field">
+                  <label for="previewSeed">Preview seed label</label>
+                  <input id="previewSeed" data-setting="previewSeed" type="text" />
+                </div>
+              </div>
+
+              <div class="toggle-grid">
+                <label class="toggle"><span>Preview auto-scroll</span><input data-setting="previewAuto" type="checkbox" /><span class="switch"></span></label>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <div class="footer-controls">
+          <button class="btn" id="resetBtn" type="button">Reset</button>
+          <button class="btn primary" id="refreshBtn" type="button">Refresh Preview</button>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <div class="panel preview-panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Preview Window</h2>
+              <p class="panel-note">Uses the same <span class="mini-kbd">overlay/overlay.html</span> file with <span class="mini-kbd">preview=1</span>.</p>
+            </div>
+            <div class="preview-actions">
+              <button class="btn" id="injectBtn" type="button">Inject Random</button>
+            </div>
+          </div>
+          <div class="preview-frame-wrap">
+            <iframe id="previewFrame" title="Multichat overlay preview" allow="clipboard-read; clipboard-write"></iframe>
+          </div>
+        </div>
+
+        <div class="panel url-panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">OBS Overlay Link</h2>
+              <p class="panel-note">Paste this into an OBS Browser Source. The URL updates as controls change.</p>
+            </div>
+          </div>
+          <div class="url-body">
+            <div class="url-row">
+              <input id="obsUrl" type="text" readonly aria-label="Generated OBS overlay URL" />
+              <button class="btn" id="copyBtn" type="button">Copy</button>
+              <button class="btn" id="openBtn" type="button">Open</button>
+            </div>
+            <div class="copy-status" id="copyStatus">Ready.</div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="./dashboard.js"></script>
+</body>
+</html>
