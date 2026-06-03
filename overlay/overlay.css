@@ -16,9 +16,9 @@
   --avatar-size: 34px;
   --message-text-shadow: 0 2px 10px rgba(0, 0, 0, 0.74), 0 0 18px rgba(0, 0, 0, 0.44);
   --message-gap: 5px;
-  --announcement-bg: rgba(145, 70, 255, 0.25);
-  --announcement-border: rgba(145, 70, 255, 0.68);
-  --announcement-glow: rgba(145, 70, 255, 0.28);
+  --announcement-bg: rgba(145, 70, 255, 0.46);
+  --announcement-border: rgba(145, 70, 255, 0.92);
+  --announcement-glow: rgba(145, 70, 255, 0.48);
   --font-size: 18px;
   --line-height: 1.28;
   --gif-max-width: 220px;
@@ -96,13 +96,74 @@ body.no-text-shadow {
 .message.kick { --platform-color: #53fc18; }
 .message.no-avatar { grid-template-columns: minmax(0, 1fr); }
 
+
+body.style-bare .message {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+}
+
+body.style-bare .avatar { display: none; }
+
+body.style-bare .meta {
+  margin-right: 5px;
+  gap: 3px;
+}
+
+body.style-bubbles .message {
+  padding: 0;
+}
+
+body.style-bubbles .body {
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.035)),
+    rgba(10, 12, 20, 0.56);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+body.style-cards .message {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.032)),
+    rgba(10, 12, 20, 0.58);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.30);
+  backdrop-filter: blur(10px);
+}
+
+body.style-bubbles .message.announcement {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.style-bubbles .message.announcement .body {
+  border-color: var(--announcement-border);
+  background:
+    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.34)),
+    rgba(10, 12, 20, 0.44);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.30),
+    0 0 28px var(--announcement-glow);
+}
+
 .message.announcement {
   padding: 8px 10px;
   border: 1px solid var(--announcement-border);
   border-radius: 16px;
   background:
-    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.58)),
-    rgba(10, 12, 20, 0.58);
+    linear-gradient(90deg, var(--announcement-bg), rgba(10, 12, 20, 0.32)),
+    rgba(10, 12, 20, 0.42);
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.30),
     0 0 24px var(--announcement-glow);

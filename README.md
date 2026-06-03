@@ -1,6 +1,6 @@
 # SlickPickleNick Multichat Overlay
 
-Version: `v0.1.7`
+Version: `v0.1.8`
 
 Compact OBS browser-source chat overlay for Twitch, YouTube, and Kick messages using Streamer.bot as the WebSocket bridge.
 
@@ -21,7 +21,7 @@ overlay/
 
 - Twitch, YouTube, and Kick platform toggles
 - Streamer.bot WebSocket connection without required Streamer.bot actions or chat triggers
-- Compact chat feed layout
+- Style dropdown with Standard Compact, Platform-Only Compact, Bubble Feed, and Stacked Cards layouts
 - Optional profile image display
 - Fallback user icon when no profile image URL is available
 - Plain inline platform logo icons for Twitch, YouTube, and Kick indicators
@@ -36,7 +36,9 @@ overlay/
 - Profile image size control
 - Left overlay padding control, default `20px`
 - Text shadow toggle
-- Dashboard preview and live preview switch using a scaled `1920 × 1080` stream canvas
+- Dashboard Preview/Live source switch
+- Dashboard Zoomed/Scaled view switch, defaulting to Zoomed for easier editing
+- Scaled preview view using a full `1920 × 1080` stream canvas
 - Font family, font size, line height, and message gap controls
 - Twitch native emote rendering when Streamer.bot provides emote data
 - BTTV global emote support
@@ -67,12 +69,12 @@ overlay/
 7. Paste the generated URL into the Browser Source URL field.
 8. Set the Browser Source size to the desired overlay area.
 
-Recommended OBS starting size:
+Recommended OBS Browser Source size:
 
-- Width: `450`
+- Width: `1920`
 - Height: `1080`
 
-The overlay background is transparent unless preview mode is enabled.
+The chat feed itself defaults to a `450px` width limit and `1080px` height limit inside that browser source. The overlay background is transparent unless preview mode is enabled.
 
 ## Streamer.bot setup
 
@@ -162,16 +164,15 @@ The preview user/message arrays are stored in `overlay/overlay.js` as:
 
 These are intentionally separated from the renderer logic so preset sample users can be added later.
 
-## v0.1.7 changes
+## v0.1.8 changes
 
-- Fixed the dashboard preview iframe to sit inside a true scaled 1920 × 1080 preview stage.
-- Added preview/live mode buttons in the dashboard preview panel.
-- Added a dashboard connection pill that receives Connecting, Connected, and Disconnected states from the live overlay iframe.
-- Added text shadow toggle support.
-- Added left padding control for the chat feed, defaulting to `20px`.
-- Changed platform icons to inline logo SVGs with no app-style square background.
-- Improved Twitch announcement subscription and parsing for `Twitch.Announcement` and `Twitch.SharedChatAnnouncement`.
-- Updated the generated URL section to more closely match the Breaking News Overlay layout.
+- Fixed preview-stage sizing so the scaled 1920 × 1080 preview no longer crops out of frame.
+- Added two-axis preview controls: Preview/Live source and Zoomed/Scaled view.
+- Set the dashboard to default to Preview + Zoomed view for easier editing.
+- Added message style selection with Standard Compact, Platform-Only Compact, Bubble Feed, and Stacked Cards layouts.
+- Added `style` URL parameter support for the OBS overlay.
+- Made Twitch announcement highlights more colorful while keeping the glass-style treatment.
+- Added broader Twitch announcement event matching, including `ChatAnnouncement`-style event names.
 
 ## Recommended workflow for future edits
 
@@ -185,16 +186,15 @@ For small adjustments after the system is working, edit individual files:
 - OBS rendering, WebSocket handling, message parsing, emotes, and GIF handling: `overlay/overlay.js`
 - Setup instructions: `README.md`
 
-## Known limitations in v0.1.7
+## Known limitations in v0.1.8
 
 - Profile images depend on whether Streamer.bot includes an image URL in the event payload.
 - YouTube and Kick payload structures may vary by Streamer.bot version, so the normalizer uses multiple fallback fields.
 - Twitch native emotes require Streamer.bot to provide emote index/image data.
 - Channel BTTV and 7TV emotes require Twitch user IDs, not usernames.
 - GIF detection currently targets direct `.gif` URLs only.
-- Style dropdowns are not included yet. This version is compact-feed only.
 
-## v0.1.7 structure note
+## v0.1.8 structure note
 
 The dashboard CSS and JavaScript are embedded directly in `index.html`.
 

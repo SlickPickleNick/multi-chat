@@ -15,6 +15,7 @@ const defaults = {
   sharedBadge: true,
   fade: true,
   textShadow: true,
+  style: 'compact',
   overlayWidth: 450,
   overlayHeight: 1080,
   overlayPaddingLeft: 20,
@@ -58,6 +59,11 @@ function numberParam(name, fallback, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function normalizeStyle(value) {
+  const style = String(value || '').trim().toLowerCase();
+  return ['compact', 'bare', 'bubbles', 'cards'].includes(style) ? style : 'compact';
+}
+
 const CONFIG = {
   platforms: (query.get('platforms') || defaults.platforms).split(',').map((p) => p.trim().toLowerCase()).filter(Boolean),
   scheme: query.get('scheme') || defaults.scheme,
@@ -72,6 +78,7 @@ const CONFIG = {
   sharedBadge: boolParam('sharedBadge', defaults.sharedBadge),
   fade: boolParam('fade', defaults.fade),
   textShadow: boolParam('textShadow', defaults.textShadow),
+  style: normalizeStyle(query.get('style') || defaults.style),
   overlayWidth: numberParam('overlayWidth', defaults.overlayWidth, 160, 1920),
   overlayHeight: numberParam('overlayHeight', defaults.overlayHeight, 120, 1080),
   overlayPaddingLeft: numberParam('overlayPaddingLeft', defaults.overlayPaddingLeft, 0, 400),
@@ -114,6 +121,7 @@ document.documentElement.style.setProperty('--message-gap', `${CONFIG.gap}px`);
 document.documentElement.style.setProperty('--gif-max-width', `${CONFIG.gifMaxWidth}px`);
 document.body.style.fontFamily = CONFIG.font;
 if (CONFIG.preview) document.body.classList.add('preview-mode');
+document.body.classList.add(`style-${CONFIG.style}`);
 if (!CONFIG.textShadow) document.body.classList.add('no-text-shadow');
 
 const feed = document.getElementById('chatFeed');
@@ -136,6 +144,7 @@ const EVENT_WISHLIST = {
   Twitch: [
     'ChatMessage',
     'Announcement',
+    'ChatAnnouncement',
     'SharedChatAnnouncement',
     'ChatMessageDeleted',
     'SharedChatMessageDeleted',
@@ -358,7 +367,7 @@ function subscribeToEvents() {
     let selected = available ? wanted.filter((eventName) => available.some((item) => String(item).toLowerCase() === eventName.toLowerCase())) : wanted;
     if (available && !selected.length) selected = wanted;
     if (source === 'Twitch') {
-      ['Announcement', 'SharedChatAnnouncement'].forEach((eventName) => {
+      ['Announcement', 'ChatAnnouncement', 'SharedChatAnnouncement'].forEach((eventName) => {
         if (!selected.includes(eventName)) selected.push(eventName);
       });
     }
@@ -449,9 +458,10 @@ function sourceToPlatform(source) {
 }
 
 function isChatEvent(platform, type) {
-  if (platform === 'twitch') return type === 'ChatMessage' || type === 'Announcement' || type === 'SharedChatAnnouncement';
-  if (platform === 'youtube') return type === 'Message';
-  if (platform === 'kick') return type === 'ChatMessage';
+  const eventType = String(type || '');
+  if (platform === 'twitch') return eventType === 'ChatMessage' || /announcement/i.test(eventType);
+  if (platform === 'youtube') return eventType === 'Message';
+  if (platform === 'kick') return eventType === 'ChatMessage';
   return false;
 }
 
@@ -497,7 +507,7 @@ function normalizeMessage(platform, type, data) {
   const badges = Array.isArray(user.badges) ? user.badges : Array.isArray(data.badges) ? data.badges : [];
   const isShared = Boolean(data.isInSharedChat || data.isFromSharedChatGuest || data.sharedChatSource || data.source);
   const sharedSource = data.sharedChatSource || data.source || null;
-  const announcementColor = isAnnouncement ? normalizeAnnouncementColor(data.announcementColor) : null;
+  const announcementColor = isAnnouncement ? normalizeAnnouncementColor(data.announcementColor || data.color || data.announcement?.color || data.announcement?.announcementColor) : null;
   const avatarUrl = getAvatarUrl(user, data, platform, normalizedName);
 
   return {
@@ -730,19 +740,20 @@ function removeNode(node, immediate = false) {
 
 function renderMessage(message) {
   const article = document.createElement('article');
-  article.className = `message ${message.platform}${CONFIG.avatar ? '' : ' no-avatar'}${message.isAnnouncement ? ' announcement' : ''}`;
+  const showAvatar = CONFIG.avatar && CONFIG.style !== 'bare';
+  article.className = `message ${message.platform}${showAvatar ? '' : ' no-avatar'}${message.isAnnouncement ? ' announcement' : ''}`;
   article.dataset.messageId = message.id;
   article.dataset.userId = message.userId || '';
   article.style.setProperty('--user-color', message.userColor || platformDefaultColor(message.platform));
 
   if (message.isAnnouncement) {
     const announcementColor = message.announcementColor || '#9146ff';
-    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.24));
-    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.72));
-    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.32));
+    article.style.setProperty('--announcement-bg', toRgba(announcementColor, 0.46));
+    article.style.setProperty('--announcement-border', toRgba(announcementColor, 0.92));
+    article.style.setProperty('--announcement-glow', toRgba(announcementColor, 0.52));
   }
 
-  if (CONFIG.avatar) {
+  if (showAvatar) {
     article.appendChild(renderAvatar(message.avatarUrl, message.username));
   }
 
@@ -791,30 +802,33 @@ function fallbackUserIcon() {
 function renderMeta(message) {
   const meta = document.createElement('span');
   meta.className = 'meta';
+  const bare = CONFIG.style === 'bare';
 
   if (CONFIG.platformIcon) meta.appendChild(platformIcon(message.platform));
   if (message.isAnnouncement) meta.appendChild(announcementIcon());
 
-  const username = document.createElement('span');
-  username.className = 'username';
-  username.textContent = message.username;
-  meta.appendChild(username);
+  if (!bare) {
+    const username = document.createElement('span');
+    username.className = 'username';
+    username.textContent = message.username;
+    meta.appendChild(username);
 
-  if (CONFIG.badges) renderBadges(message.badges, meta);
+    if (CONFIG.badges) renderBadges(message.badges, meta);
 
-  if (CONFIG.sharedBadge && message.isShared) {
-    const badge = document.createElement('span');
-    badge.className = 'badge-text shared-badge';
-    const source = message.sharedSource?.name || message.sharedSource?.login || '';
-    badge.textContent = source ? `Shared: ${source}` : 'Shared';
-    meta.appendChild(badge);
-  }
+    if (CONFIG.sharedBadge && message.isShared) {
+      const badge = document.createElement('span');
+      badge.className = 'badge-text shared-badge';
+      const source = message.sharedSource?.name || message.sharedSource?.login || '';
+      badge.textContent = source ? `Shared: ${source}` : 'Shared';
+      meta.appendChild(badge);
+    }
 
-  if (CONFIG.time) {
-    const time = document.createElement('span');
-    time.className = 'time';
-    time.textContent = formatTime(message.timestamp);
-    meta.appendChild(time);
+    if (CONFIG.time) {
+      const time = document.createElement('span');
+      time.className = 'time';
+      time.textContent = formatTime(message.timestamp);
+      meta.appendChild(time);
+    }
   }
 
   return meta;

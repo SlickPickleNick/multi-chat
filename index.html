@@ -483,8 +483,10 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   padding: 18px;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  place-items: center;
+  align-items: stretch;
+  justify-items: start;
   gap: 10px;
+  overflow: hidden;
   background:
     linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.035) 75%),
     linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.035) 75%),
@@ -500,11 +502,12 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
 }
 
 .preview-stage {
-  --preview-scale: 0.5;
+  --preview-scale: 1;
   position: relative;
-  width: 100%;
+  width: min(100%, 560px);
+  height: 100%;
+  min-height: 420px;
   max-width: 100%;
-  aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -517,8 +520,20 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
     0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
+.preview-stage.scaled {
+  justify-self: center;
+  align-self: center;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+}
+
+.preview-stage.zoomed {
+  justify-self: start;
+  align-self: stretch;
+}
+
 .preview-stage::before {
-  content: "1920 × 1080 PREVIEW";
+  content: "ZOOMED CHAT PREVIEW";
   position: absolute;
   top: 12px;
   right: 14px;
@@ -532,6 +547,8 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
   font-weight: 950;
   letter-spacing: 0.12em;
 }
+
+.preview-stage.scaled::before { content: "1920 × 1080 PREVIEW"; }
 
 #previewFrame {
   position: absolute;
@@ -641,7 +658,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
       <div class="top-actions">
         <span class="pill" id="connectionPill"><span class="dot preview" id="connectionDot"></span><strong id="connectionLabel">Preview</strong><span id="connectionText">mode enabled</span></span>
         <span class="pill">GitHub Pages ready</span>
-        <span class="pill">v0.1.4</span>
+        <span class="pill">v0.1.8</span>
       </div>
     </header>
 
@@ -720,6 +737,17 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
               <span class="chev">›</span>
             </summary>
             <div class="group-body">
+              <div class="field">
+                <label for="layoutStyle">Message style</label>
+                <select id="layoutStyle" data-setting="layoutStyle">
+                  <option value="compact">Standard Compact</option>
+                  <option value="bare">Platform-Only Compact</option>
+                  <option value="bubbles">Bubble Feed</option>
+                  <option value="cards">Stacked Cards</option>
+                </select>
+                <div class="hint">Start with the current compact format, or switch to a lighter platform-only feed, bubbles, or stacked cards.</div>
+              </div>
+
               <div class="field-row">
                 <div class="field">
                   <label for="overlayWidth">Chat width</label>
@@ -896,9 +924,13 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
               <p class="panel-note">Uses the same <span class="mini-kbd">overlay/overlay.html</span> file with <span class="mini-kbd">preview=1</span>.</p>
             </div>
             <div class="preview-actions">
-              <div class="mode-toggle" aria-label="Preview mode switch">
+              <div class="mode-toggle" aria-label="Preview or live source switch">
                 <button class="mode-btn active" id="previewModeBtn" type="button">Preview</button>
                 <button class="mode-btn" id="liveModeBtn" type="button">Live</button>
+              </div>
+              <div class="mode-toggle" aria-label="Preview scale switch">
+                <button class="mode-btn active" id="zoomedViewBtn" type="button">Zoomed</button>
+                <button class="mode-btn" id="scaledViewBtn" type="button">Scaled</button>
               </div>
               <button class="btn" id="injectBtn" type="button">Inject Random</button>
             </div>
@@ -939,7 +971,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.32); }
     </section>
   </main>
   <script>
-const STORAGE_KEY = 'spn-multichat-settings-v017';
+const STORAGE_KEY = 'spn-multichat-settings-v018';
 
 const defaults = {
   baseUrl: new URL('overlay/overlay.html', window.location.href).href,
@@ -958,6 +990,7 @@ const defaults = {
   showSharedBadge: true,
   fadeAnimation: true,
   textShadow: true,
+  layoutStyle: 'compact',
   overlayWidth: '450',
   overlayHeight: '1080',
   overlayPaddingLeft: '20',
@@ -1005,6 +1038,7 @@ function loadSettings() {
 let settings = loadSettings();
 let debounceTimer = null;
 let previewMode = 'preview';
+let previewView = 'zoomed';
 let lastLiveStatus = { status: 'connecting', text: 'Connecting...' };
 
 function applySettingsToForm() {
@@ -1076,6 +1110,14 @@ function setPreviewMode(mode) {
   updateUrls({ reloadPreview: true });
 }
 
+function setPreviewView(view) {
+  previewView = view === 'scaled' ? 'scaled' : 'zoomed';
+  $('#zoomedViewBtn')?.classList.toggle('active', previewView === 'zoomed');
+  $('#scaledViewBtn')?.classList.toggle('active', previewView === 'scaled');
+  resizePreviewStage();
+  updatePreviewDimensions();
+}
+
 function buildUrl({ preview = false } = {}) {
   let base = settings.baseUrl || defaults.baseUrl;
   let url;
@@ -1099,6 +1141,7 @@ function buildUrl({ preview = false } = {}) {
   addParam(params, 'sharedBadge', settings.showSharedBadge);
   addParam(params, 'fade', settings.fadeAnimation);
   addParam(params, 'textShadow', settings.textShadow);
+  addParam(params, 'style', settings.layoutStyle);
   addParam(params, 'overlayWidth', settings.overlayWidth);
   addParam(params, 'overlayHeight', settings.overlayHeight);
   addParam(params, 'overlayPaddingLeft', settings.overlayPaddingLeft);
@@ -1186,22 +1229,43 @@ function resizePreviewStage() {
   const stage = $('#previewStage');
   const wrap = stage?.parentElement;
   if (!stage || !wrap) return;
+
   const availableWidth = Math.max(1, wrap.clientWidth);
-  const availableHeight = Math.max(1, wrap.clientHeight - 30);
-  const width = Math.min(availableWidth, availableHeight * (16 / 9));
-  const height = width * (9 / 16);
-  const scale = width / 1920;
-  stage.style.width = `${width}px`;
-  stage.style.height = `${height}px`;
-  stage.style.setProperty('--preview-scale', String(scale));
+  const availableHeight = Math.max(1, wrap.clientHeight - 34);
+  const overlayWidth = Number(settings.overlayWidth) || Number(defaults.overlayWidth);
+  const padding = Number(settings.overlayPaddingLeft) || 0;
+
+  stage.classList.toggle('scaled', previewView === 'scaled');
+  stage.classList.toggle('zoomed', previewView === 'zoomed');
+
+  if (previewView === 'scaled') {
+    const width = Math.min(availableWidth, availableHeight * (16 / 9));
+    const height = width * (9 / 16);
+    const scale = width / 1920;
+    stage.style.width = `${Math.max(1, width)}px`;
+    stage.style.height = `${Math.max(1, height)}px`;
+    stage.style.setProperty('--preview-scale', String(scale));
+    return;
+  }
+
+  const zoomWidth = Math.min(availableWidth, Math.max(420, overlayWidth + padding + 92));
+  stage.style.width = `${zoomWidth}px`;
+  stage.style.height = `${Math.max(420, availableHeight)}px`;
+  stage.style.setProperty('--preview-scale', '1');
 }
 
 function updatePreviewDimensions() {
   const width = Number(settings.overlayWidth) || Number(defaults.overlayWidth);
   const height = Number(settings.overlayHeight) || Number(defaults.overlayHeight);
   const padding = Number(settings.overlayPaddingLeft) || 0;
+  const style = settings.layoutStyle || defaults.layoutStyle;
   const note = $('#previewSizeNote');
-  if (note) note.textContent = `Preview uses a scaled 1920×1080 canvas. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px.`;
+  if (!note) return;
+  if (previewView === 'scaled') {
+    note.textContent = `Scaled view shows the full 1920×1080 OBS canvas. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px. Style: ${style}.`;
+  } else {
+    note.textContent = `Zoomed view clips into the chat area at 1:1 scale for editing. Chat limit: ${width}px × ${height}px. Left padding: ${padding}px. Style: ${style}.`;
+  }
 }
 
 function resetSettings() {
@@ -1215,10 +1279,11 @@ function resetSettings() {
 }
 
 applySettingsToForm();
-updatePreviewDimensions();
+setPreviewView('zoomed');
 setConnectionPill('preview', 'mode enabled');
 updateUrls({ reloadPreview: true });
 resizePreviewStage();
+updatePreviewDimensions();
 
 $$('[data-setting]').forEach((input) => {
   input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', scheduleUpdate);
@@ -1230,6 +1295,8 @@ $('#refreshBtn').addEventListener('click', refreshPreview);
 $('#injectBtn').addEventListener('click', injectRandom);
 $('#previewModeBtn').addEventListener('click', () => setPreviewMode('preview'));
 $('#liveModeBtn').addEventListener('click', () => setPreviewMode('live'));
+$('#zoomedViewBtn').addEventListener('click', () => setPreviewView('zoomed'));
+$('#scaledViewBtn').addEventListener('click', () => setPreviewView('scaled'));
 $('#resetBtn').addEventListener('click', resetSettings);
 
 window.addEventListener('message', (event) => {
